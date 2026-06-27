@@ -1,0 +1,2800 @@
+diff --git a/android/app/build.gradle b/android/app/build.gradle
+index 7d925cb..8be1dfb 100644
+--- a/android/app/build.gradle
++++ b/android/app/build.gradle
+@@ -1,72 +1,38 @@
+-def localProperties = new Properties()
+-def localPropertiesFile = rootProject.file('local.properties')
+-if (localPropertiesFile.exists()) {
+-    localPropertiesFile.withReader('UTF-8') { reader ->
+-        localProperties.load(reader)
+-    }
+-}
+-
+-def flutterRoot = localProperties.getProperty('flutter.sdk')
+-if (flutterRoot == null) {
+-    throw new GradleException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
+-}
+-
+-def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
+-if (flutterVersionCode == null) {
+-    flutterVersionCode = '1'
+-}
+-
+-def flutterVersionName = localProperties.getProperty('flutter.versionName')
+-if (flutterVersionName == null) {
+-    flutterVersionName = '1.0'
+-}
+-
+-apply plugin: 'com.android.application'
+-apply plugin: 'kotlin-android'
+-apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+-
+-def keystoreProperties = new Properties()
+-def keystorePropertiesFile = rootProject.file('key.properties')
+-if (keystorePropertiesFile.exists()) {
+-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+-}
+-android {
+-    compileSdkVersion 30
+-    sourceSets {
+-        main.java.srcDirs += 'src/main/kotlin'
+-    }
+-
+-    lintOptions {
+-        disable 'InvalidPackage'
+-    }
+-
+-    defaultConfig {
+-        applicationId "online.xournal.mobile"
+-        minSdkVersion 19
+-        targetSdkVersion 30
+-        versionCode flutterVersionCode.toInteger()
+-        versionName flutterVersionName
+-    }
+-
+-    signingConfigs {
+-        release {
+-            keyAlias keystoreProperties['keyAlias']
+-            keyPassword keystoreProperties['keyPassword']
+-            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+-            storePassword keystoreProperties['storePassword']
+-        }
+-    }
+-    buildTypes {
+-        release {
+-            signingConfig signingConfigs.release
+-        }
+-    }
+-}
+-
+-flutter {
+-    source '../..'
+-}
+-
+-dependencies {
+-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+-}
++plugins {
++    id "com.android.application"
++    id "org.jetbrains.kotlin.android"
++    id "dev.flutter.flutter-gradle-plugin"
++}
++
++android {
++    namespace = "online.xournal.mobile"
++    compileSdk = 36
++    ndkVersion = "26.1.10909125"
++
++    compileOptions {
++        sourceCompatibility = JavaVersion.VERSION_11
++        targetCompatibility = JavaVersion.VERSION_11
++    }
++
++    kotlinOptions {
++        jvmTarget = "11"
++    }
++
++    defaultConfig {
++        applicationId = "online.xournal.mobile"
++        minSdk = flutter.minSdkVersion
++        targetSdk = flutter.targetSdkVersion
++        versionCode = flutter.versionCode
++        versionName = flutter.versionName
++    }
++
++    buildTypes {
++        release {
++            signingConfig = signingConfigs.debug
++        }
++    }
++}
++
++flutter {
++    source '../..'
++}
+diff --git a/android/app/src/main/AndroidManifest.xml b/android/app/src/main/AndroidManifest.xml
+index 9dfacc5..5136d60 100644
+--- a/android/app/src/main/AndroidManifest.xml
++++ b/android/app/src/main/AndroidManifest.xml
+@@ -1,17 +1,12 @@
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+     package="online.xournal.mobile">
+-    <!-- io.flutter.app.FlutterApplication is an android.app.Application that
+-         calls FlutterMain.startInitialization(this); in its onCreate method.
+-         In most cases you can leave this as-is, but you if you want to provide
+-         additional functionality it is fine to subclass or reimplement
+-         FlutterApplication and put your custom class here. -->
+     <application
+-        android:name="io.flutter.app.FlutterApplication"
+         android:label="Xournal++"
+         android:icon="@mipmap/ic_launcher">
+         <activity
+             android:name=".MainActivity"
+             android:launchMode="singleTop"
++            android:exported="true"
+             android:theme="@style/LaunchTheme"
+             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+             android:hardwareAccelerated="true"
+diff --git a/android/build.gradle b/android/build.gradle
+index de9a05b..bc157bd 100644
+--- a/android/build.gradle
++++ b/android/build.gradle
+@@ -1,31 +1,18 @@
+-buildscript {
+-    ext.kotlin_version = '1.3.50'
+-    repositories {
+-        google()
+-        jcenter()
+-    }
+-
+-    dependencies {
+-        classpath 'com.android.tools.build:gradle:3.6.3'
+-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+-    }
+-}
+-
+-allprojects {
+-    repositories {
+-        google()
+-        jcenter()
+-    }
+-}
+-
+-rootProject.buildDir = '../build'
+-subprojects {
+-    project.buildDir = "${rootProject.buildDir}/${project.name}"
+-}
+-subprojects {
+-    project.evaluationDependsOn(':app')
+-}
+-
+-task clean(type: Delete) {
+-    delete rootProject.buildDir
+-}
++allprojects {
++    repositories {
++        google()
++        mavenCentral()
++    }
++}
++
++rootProject.buildDir = '../build'
++subprojects {
++    project.buildDir = "${rootProject.buildDir}/${project.name}"
++}
++subprojects {
++    project.evaluationDependsOn(':app')
++}
++
++tasks.register("clean", Delete) {
++    delete rootProject.buildDir
++}
+diff --git a/android/gradle/wrapper/gradle-wrapper.properties b/android/gradle/wrapper/gradle-wrapper.properties
+index 4f4dea8..6636b63 100644
+--- a/android/gradle/wrapper/gradle-wrapper.properties
++++ b/android/gradle/wrapper/gradle-wrapper.properties
+@@ -3,4 +3,4 @@ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
+ zipStoreBase=GRADLE_USER_HOME
+ zipStorePath=wrapper/dists
+-distributionUrl=https\://services.gradle.org/distributions/gradle-6.5-all.zip
++distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-all.zip
+diff --git a/android/settings.gradle b/android/settings.gradle
+index 33f0745..335b7d7 100644
+--- a/android/settings.gradle
++++ b/android/settings.gradle
+@@ -1,11 +1,25 @@
+-include ':app'
+-
+-def localPropertiesFile = new File(rootProject.projectDir, "local.properties")
+-def properties = new Properties()
+-
+-assert localPropertiesFile.exists()
+-localPropertiesFile.withReader("UTF-8") { reader -> properties.load(reader) }
+-
+-def flutterSdkPath = properties.getProperty("flutter.sdk")
+-assert flutterSdkPath != null, "flutter.sdk not set in local.properties"
+-apply from: "$flutterSdkPath/packages/flutter_tools/gradle/app_plugin_loader.gradle"
++pluginManagement {
++    def flutterSdkPath = {
++        def properties = new Properties()
++        file("local.properties").withInputStream { properties.load(it) }
++        def flutterSdkPath = properties.getProperty("flutter.sdk")
++        assert flutterSdkPath != null, "flutter.sdk not set in local.properties"
++        return flutterSdkPath
++    }()
++
++    includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
++
++    repositories {
++        google()
++        mavenCentral()
++        gradlePluginPortal()
++    }
++}
++
++plugins {
++    id "dev.flutter.flutter-plugin-loader" version "1.0.0"
++    id "com.android.application" version "8.5.2" apply false
++    id "org.jetbrains.kotlin.android" version "1.9.22" apply false
++}
++
++include ":app"
+diff --git a/lib/layer_contents/XppTexImage.dart b/lib/layer_contents/XppTexImage.dart
+index 1c4bedd..9e619f6 100644
+--- a/lib/layer_contents/XppTexImage.dart
++++ b/lib/layer_contents/XppTexImage.dart
+@@ -1,5 +1,5 @@
+ import 'package:flutter/material.dart';
+-import 'package:katex_flutter/katex_flutter.dart';
++import 'package:flutter_math_fork/flutter_math.dart';
+ import 'package:xml/xml.dart';
+ import 'package:xournalpp/layer_contents/XppText.dart';
+ import 'package:xournalpp/src/HexColor.dart';
+@@ -53,14 +53,16 @@ class XppTexImage extends XppContent {
+ 
+   @override
+   XppPageContentWidget render() {
+-    print(color);
+     return XppPageContentWidget(
+-      child: DefaultTextStyle(
+-        style:
+-            TextStyle(color: color, fontSize: 18), // TODO: implement text size
+-        child: new KaTeX(laTeXCode: Text('\$\\displaystyle{$text}\$')),
++      child: Math.tex(
++        text ?? '',
++        mathStyle: MathStyle.display,
++        textStyle: TextStyle(color: color, fontSize: 18),
++        onErrorFallback: (err) => Text(
++          text ?? '',
++          style: TextStyle(color: Colors.red, fontSize: 14, fontStyle: FontStyle.italic),
++        ),
+       ),
+-      onSelected: () => print('Edit LaTeX!'),
+       tool: EditingTool.LATEX,
+     );
+   }
+diff --git a/lib/layer_contents/XppText.dart b/lib/layer_contents/XppText.dart
+index e83aa2c..03441b2 100644
+--- a/lib/layer_contents/XppText.dart
++++ b/lib/layer_contents/XppText.dart
+@@ -26,11 +26,56 @@ class XppText extends XppContent {
+   @override
+   XppPageContentWidget render() {
+     return XppPageContentWidget(
+-      child: RichTextField(),
++      child: Text(
++        text ?? '',
++        style: TextStyle(
++          color: color ?? Colors.black,
++          fontSize: size ?? 16,
++          fontFamily: fontFamily,
++        ),
++      ),
+       tool: EditingTool.TEXT,
+     );
+   }
+ 
++  static Future<XppText?> edit({
++    required BuildContext context,
++    required Offset topLeft,
++    required Color? color,
++    required double? size,
++    String? initialText,
++  }) async {
++    final ctrl = TextEditingController(text: initialText);
++    final result = await showDialog<String>(
++      context: context,
++      builder: (ctx) => AlertDialog(
++        title: const Text('Add text'),
++        content: TextField(
++          controller: ctrl,
++          autofocus: true,
++          maxLines: null,
++          decoration: const InputDecoration(hintText: 'Enter text…'),
++          onSubmitted: (v) => Navigator.pop(ctx, v),
++        ),
++        actions: [
++          TextButton(
++              onPressed: () => Navigator.pop(ctx, null),
++              child: const Text('Cancel')),
++          TextButton(
++              onPressed: () => Navigator.pop(ctx, ctrl.text),
++              child: const Text('OK')),
++        ],
++      ),
++    );
++    if (result == null || result.isEmpty) return null;
++    return XppText(
++      offset: topLeft,
++      color: color,
++      size: size,
++      text: result,
++    );
++  }
++
+   @override
+   XmlElement toXmlElement() => XmlElement(XmlName('text'), [
+         XmlAttribute(XmlName('font'), fontFamily!),
+diff --git a/lib/main.dart b/lib/main.dart
+index 52064ee..ecc01fd 100644
+--- a/lib/main.dart
++++ b/lib/main.dart
+@@ -64,34 +64,32 @@ const TextStyle kEmphasisFont = TextStyle(
+     letterSpacing: 1.8);
+ 
+ final kTextTheme = TextTheme(
+-  headline1: kHugeFont,
+-  headline2: kHugeFont,
+-  headline3: kLargeFont
++  displayLarge:   kHugeFont,
++  displayMedium:  kHugeFont,
++  displaySmall:   kLargeFont
+       .copyWith(color: kDarkColor)
+       .copyWith(fontSize: kLargeFontSize * kFontSizeDivision),
+-  headline4: kLargeFont.copyWith(color: kDarkColor),
+-  headline5: kLargeFont.copyWith(color: kDarkColor),
+-  headline6: kLargeFont.copyWith(color: kDarkColor),
+-  bodyText1: kBodyFont,
+-  bodyText2: kEmphasisFont,
+-  caption: kEmphasisFont,
+-  button: kEmphasisFont,
++  headlineMedium: kLargeFont.copyWith(color: kDarkColor),
++  headlineSmall:  kLargeFont.copyWith(color: kDarkColor),
++  titleLarge:     kLargeFont.copyWith(color: kDarkColor),
++  bodyLarge:      kBodyFont,
++  bodyMedium:     kEmphasisFont,
++  bodySmall:      kEmphasisFont,
++  labelLarge:     kEmphasisFont,
+ );
+ 
+ final kColorScheme = ColorScheme(
+-  primary: kPrimaryColor,
+-  primaryVariant: kPrimaryColorAccent,
+-  secondary: kSecondaryColor,
+-  secondaryVariant: kSecondaryColorAccent,
+-  surface: kDarkColor!,
+-  background: kDarkColor!,
+-  error: Colors.deepOrange,
++  primary:          kPrimaryColor,
++  primaryContainer: kPrimaryColorAccent,
++  secondary:        kSecondaryColor,
++  secondaryContainer: kSecondaryColorAccent,
++  surface:   kDarkColor!,
++  error:     Colors.deepOrange,
+   onPrimary: kLightColor,
+-  onSecondary: kDarkColor!,
+-  onSurface: kDarkColor!,
+-  onBackground: kLightColor,
+-  onError: kLightColor,
+-  brightness: Brightness.dark,
++  onSecondary: kLightColor,
++  onSurface:   kLightColor,
++  onError:     kLightColor,
++  brightness:  Brightness.dark,
+ );
+ 
+ final kDialogTheme =
+@@ -118,17 +116,17 @@ class XournalppMobile extends StatelessWidget {
+       ],
+       supportedLocales: S.delegate.supportedLocales,
+       theme: ThemeData(
+-          primarySwatch: kPrimaryColor as MaterialColor?,
+-          accentColor: kSecondaryColor,
+           fontFamily: 'Open Sans',
+           textTheme: kTextTheme,
+-          colorScheme: kColorScheme.copyWith(brightness: Brightness.light),
++          colorScheme: kColorScheme.copyWith(
++              brightness: Brightness.light,
++              surface: Colors.grey[100],
++              onSurface: kDarkColor,
++              onSecondary: kDarkColor),
+           visualDensity: VisualDensity.adaptivePlatformDensity,
+           dialogTheme: kDialogTheme,
+           snackBarTheme: kSnackBarTheme),
+       darkTheme: ThemeData(
+-          primarySwatch: kPrimaryColor as MaterialColor?,
+-          accentColor: kSecondaryColor,
+           fontFamily: 'Open Sans',
+           textTheme: kTextTheme,
+           colorScheme: kColorScheme,
+diff --git a/lib/pages/CanvasPage.dart b/lib/pages/CanvasPage.dart
+index 9417dd7..1ed4b41 100644
+--- a/lib/pages/CanvasPage.dart
++++ b/lib/pages/CanvasPage.dart
+@@ -1,5 +1,6 @@
+ import 'dart:async';
+ import 'dart:convert';
++import 'dart:io' as io;
+ import 'dart:math';
+ import 'dart:typed_data';
+ import 'dart:ui';
+@@ -12,7 +13,9 @@ import 'package:shared_preferences/shared_preferences.dart';
+ import 'package:transparent_image/transparent_image.dart';
+ import 'package:vector_math/vector_math_64.dart' show Vector4;
+ import 'package:xournalpp/generated/l10n.dart';
++import 'package:xournalpp/layer_contents/XppText.dart';
+ import 'package:xournalpp/src/XppFile.dart';
++import 'package:xournalpp/src/XppLayer.dart';
+ import 'package:xournalpp/src/XppPage.dart';
+ import 'package:xournalpp/src/globals.dart';
+ import 'package:xournalpp/widgets/EditingToolbar.dart';
+@@ -58,6 +61,10 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
+ 
+   bool savingFile = false;
+ 
++  // Undo/Redo history — each entry is a snapshot of the current page's content list
++  final List<List<XppContent?>> _undoStack = [];
++  final List<List<XppContent?>> _redoStack = [];
++
+   Animation<Matrix4>? _animationReset;
+   late AnimationController _controllerReset;
+ 
+@@ -112,11 +119,11 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
+                           });
+                         },
+                         removeLastContent: () {
++                          _pushUndo();
+                           _file!.pages![currentPage].layers![0].content!
+                               .removeLast();
+                         },
+                         filterEraser: ({Offset? coordinates, double? radius}) {
+-                          // if we would execute the removal instantly, we would destroy the order of the strokes
+                           List<Function> removalFunctions = [];
+                           _file!.pages![currentPage].layers![0].content!
+                               .forEach((stroke) {
+@@ -135,6 +142,7 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
+                             });
+                           });
+                           if (removalFunctions.isNotEmpty) {
++                            _pushUndo();
+                             removalFunctions.forEach((element) {
+                               element();
+                             });
+@@ -142,7 +150,7 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
+                           }
+                         },
+                         onNewContent: (newContent) {
+-                          /// TODO: manage layers
++                          _pushUndo();
+                           _file!.pages![currentPage].layers![0].content =
+                               new List.from(_file!
+                                   .pages![currentPage].layers![0].content!)
+@@ -154,9 +162,9 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
+                         child: ClipRRect(
+                           borderRadius: BorderRadius.circular(4),
+                           child: XppPageStack(
+-                            /// to communicate from [PointerListener] to [XppPageStack]
+                             key: _pageStackKey,
+                             page: _file!.pages![currentPage],
++                            onEditContent: _handleEditContent,
+                           ),
+                         ),
+                       ),
+@@ -222,6 +230,16 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
+               child: Text(widget.file?.title ?? S.of(context).newDocument)),
+         ),
+         actions: [
++          IconButton(
++            icon: const Icon(Icons.undo),
++            tooltip: 'Undo',
++            onPressed: _undoStack.isEmpty ? null : _undo,
++          ),
++          IconButton(
++            icon: const Icon(Icons.redo),
++            tooltip: 'Redo',
++            onPressed: _redoStack.isEmpty ? null : _redo,
++          ),
+           savingFile
+               ? Center(
+                   child: Padding(
+@@ -241,11 +259,13 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
+             onSelected: (item) async {
+               if (item == S.of(context).saveAs) saveFile(export: true);
+               if (item == S.of(context).sharePage) shareScreenshot();
++              if (item == 'Send to KP…') sendToKP();
+             },
+             itemBuilder: (BuildContext context) {
+               return {
+                 S.of(context).saveAs,
+-                if (!kIsWeb) S.of(context).sharePage
++                if (!kIsWeb) S.of(context).sharePage,
++                'Send to KP…',
+               }.map((String choice) {
+                 return PopupMenuItem<String>(
+                   value: choice,
+@@ -344,7 +364,7 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
+         onPressed: () {
+           showModalBottomSheet(
+               elevation: 16,
+-              backgroundColor: Theme.of(context).backgroundColor,
++              backgroundColor: Theme.of(context).colorScheme.surface,
+               shape: RoundedRectangleBorder(
+                 borderRadius: BorderRadius.only(
+                     topLeft: Radius.circular(16),
+@@ -411,7 +431,7 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
+       EditingTool tool;
+       switch (kind) {
+         case PointerDeviceKind.touch:
+-          tool = EditingTool.MOVE;
++          tool = EditingTool.STYLUS;
+           break;
+         case PointerDeviceKind.invertedStylus:
+           tool = EditingTool.ERASER;
+@@ -531,6 +551,139 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
+     }*/
+   }
+ 
++  // ── Edit existing content ───────────────────────────────────────────────────
++
++  void _handleEditContent(XppContent content) {
++    if (content is XppText) {
++      XppText.edit(
++        context: context,
++        topLeft: content.offset ?? Offset.zero,
++        color: content.color ?? toolColor,
++        size: content.size ?? toolWidth * 3,
++        initialText: content.text,
++      ).then((replacement) {
++        if (replacement == null) return;
++        _pushUndo();
++        final layer = _file!.pages![currentPage].layers![0];
++        final idx = layer.content!.indexOf(content);
++        if (idx >= 0) {
++          layer.content![idx] = replacement;
++          _pageStackKey.currentState?.setPageData(_file!.pages![currentPage]);
++          setState(() {});
++        }
++      });
++    }
++  }
++
++  // ── Undo / Redo ─────────────────────────────────────────────────────────────
++
++  List<XppContent?> get _currentContent =>
++      _file!.pages![currentPage].layers![0].content!;
++
++  void _pushUndo() {
++    _undoStack.add(List.from(_currentContent));
++    _redoStack.clear();
++  }
++
++  void _applyContent(List<XppContent?> content) {
++    setState(() {
++      _file!.pages![currentPage].layers![0].content = List.from(content);
++    });
++    _pageStackKey.currentState?.setPageData(_file!.pages![currentPage]);
++  }
++
++  void _undo() {
++    if (_undoStack.isEmpty) return;
++    _redoStack.add(List.from(_currentContent));
++    _applyContent(_undoStack.removeLast());
++  }
++
++  void _redo() {
++    if (_redoStack.isEmpty) return;
++    _undoStack.add(List.from(_currentContent));
++    _applyContent(_redoStack.removeLast());
++  }
++
++  // ── Send to KP ──────────────────────────────────────────────────────────────
++
++  Future<void> sendToKP() async {
++    if (_file == null) return;
++
++    // Prompt for host if not stored
++    final prefs = await SharedPreferences.getInstance();
++    String host  = prefs.getString('kp_host') ?? '';
++    const port   = 8421;
++
++    if (host.isEmpty) {
++      final ctrl = TextEditingController(text: 'localhost');
++      final ok = await showDialog<bool>(
++        context: context,
++        builder: (ctx) => AlertDialog(
++          title: const Text('Send to KP'),
++          content: TextField(
++            controller: ctrl,
++            decoration:
++                const InputDecoration(labelText: 'KP host / IP'),
++          ),
++          actions: [
++            TextButton(
++                onPressed: () => Navigator.pop(ctx, false),
++                child: const Text('Cancel')),
++            TextButton(
++                onPressed: () => Navigator.pop(ctx, true),
++                child: const Text('Connect')),
++          ],
++        ),
++      );
++      if (ok != true || !mounted) return;
++      host = ctrl.text.trim();
++      if (host.isEmpty) return;
++      await prefs.setString('kp_host', host);
++    }
++
++    // Encode file to gzip bytes
++    final bytes = _file!.toUint8List();
++    if (bytes == null) {
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(content: Text('Failed to encode file')));
++      return;
++    }
++
++    // HTTP POST to KP
++    final snack = ScaffoldMessenger.of(context).showSnackBar(
++      SnackBar(
++          content: Text('Sending to $host:$port…'),
++          duration: const Duration(seconds: 30)));
++    try {
++      final client = io.HttpClient();
++      client.connectionTimeout = const Duration(seconds: 10);
++      final req = await client
++          .postUrl(Uri.parse('http://$host:$port/upload_xopp'));
++      req.headers.contentType =
++          io.ContentType('application', 'x-xopp');
++      req.contentLength = bytes.length;
++      req.add(bytes);
++      final res = await req.close();
++      client.close();
++      snack.close();
++      if (!mounted) return;
++      if (res.statusCode == 200) {
++        ScaffoldMessenger.of(context).showSnackBar(
++          SnackBar(content: Text('Sent to KP ($host)')));
++      } else {
++        ScaffoldMessenger.of(context).showSnackBar(
++          SnackBar(content: Text('KP returned ${res.statusCode}')));
++      }
++    } catch (e) {
++      snack.close();
++      if (!mounted) return;
++      // Clear cached host so user can re-enter
++      await prefs.remove('kp_host');
++      ScaffoldMessenger.of(context).showSnackBar(
++        SnackBar(content: Text('Error: $e')));
++    }
++  }
++
+   void _onAnimationReset() {
+     _zoomController.value = _animationReset!.value;
+     if (!_controllerReset.isAnimating) {
+diff --git a/lib/pages/OpenPage.dart b/lib/pages/OpenPage.dart
+index 14137a4..4aae0e6 100644
+--- a/lib/pages/OpenPage.dart
++++ b/lib/pages/OpenPage.dart
+@@ -205,7 +205,7 @@ class _OpenPageState extends State<OpenPage>
+           ListTile(
+             title: Text(
+               S.of(context).recentFiles,
+-              style: Theme.of(context).textTheme.headline3,
++              style: Theme.of(context).textTheme.displaySmall,
+             ),
+           )
+         ]..addAll(_loadedRecent
+@@ -340,8 +340,8 @@ class _OpenPageState extends State<OpenPage>
+           ),
+           subtitle: Text(
+             fileInfo['name'],
+-            style: Theme.of(context).textTheme.headline3!.copyWith(
+-                color: Theme.of(context).textTheme.bodyText1!.color,
++            style: Theme.of(context).textTheme.displaySmall!.copyWith(
++                color: Theme.of(context).textTheme.bodyLarge!.color,
+                 fontSize: kEmphasisFontSize * kFontSizeDivision),
+           ),
+           trailing: Tooltip(
+diff --git a/lib/src/PdfImage.dart b/lib/src/PdfImage.dart
+index 8797cec..e36e3b7 100644
+--- a/lib/src/PdfImage.dart
++++ b/lib/src/PdfImage.dart
+@@ -1,23 +1,12 @@
++// PDF rasterization stubbed out (printing package removed for build compatibility)
+ import 'dart:typed_data';
+-
+ import 'package:file_picker_cross/file_picker_cross.dart';
+-import 'package:printing/printing.dart';
+ import 'package:xournalpp/src/XppPage.dart';
+ 
+-const double DPI = 96;
+-
+-Future<int> pdfPageCount(FilePickerCross pdf) =>
+-    Printing.raster(pdf.toUint8List()).length;
++Future<int> pdfPageCount(FilePickerCross pdf) async => 0;
+ 
+ Future<Uint8List> pdfImage(FilePickerCross pdf, int? page) async =>
+-    Printing.raster(pdf.toUint8List(), dpi: 96)
+-        .toList()
+-        .then((value) => value[page!].toPng());
++    Uint8List(0);
+ 
+-Future<XppPageSize> pdfPageSize(FilePickerCross pdf, int page) async {
+-  final raster = await Printing.raster(pdf.toUint8List(), dpi: DPI)
+-      .toList()
+-      .then((value) => value[page]);
+-  return XppPageSize(
+-      width: raster.width.toDouble(), height: raster.height.toDouble());
+-}
++Future<XppPageSize> pdfPageSize(FilePickerCross pdf, int page) async =>
++    XppPageSize(width: 595, height: 842);
+diff --git a/lib/src/XppBackground.dart b/lib/src/XppBackground.dart
+index 691de6c..73b80eb 100644
+--- a/lib/src/XppBackground.dart
++++ b/lib/src/XppBackground.dart
+@@ -1,11 +1,12 @@
++import 'dart:io';
+ import 'dart:typed_data';
+ 
+ import 'package:file_picker_cross/file_picker_cross.dart';
+ import 'package:flutter/material.dart';
+ import 'package:flutter/widgets.dart';
++import 'package:pdfx/pdfx.dart';
+ import 'package:xml/xml.dart';
+ import 'package:xournalpp/src/HexColor.dart';
+-import 'package:xournalpp/src/PdfImage.dart';
+ 
+ import 'XppPage.dart';
+ 
+@@ -20,8 +21,7 @@ abstract class XppBackground {
+   XmlElement toXmlElement();
+ }
+ 
+-/// page background for a [XppPage] made from an image URI. I am sure it will be hard to implement for web.
+-/// TODO: implement background for web
++/// page background for a [XppPage] made from an image URI.
+ class XppBackgroundImage extends XppBackground {
+   final String? filename;
+   final XppBackgroundImageDomain domain;
+@@ -34,7 +34,10 @@ class XppBackgroundImage extends XppBackground {
+ 
+   @override
+   Widget render() {
+-    return (Container());
++    if (filename == null) return Container();
++    final file = File(filename!);
++    if (!file.existsSync()) return Container(color: Colors.white);
++    return Image.file(file, fit: BoxFit.fill);
+   }
+ 
+   @override
+@@ -101,21 +104,46 @@ class PDfBackgroundWidget extends StatefulWidget {
+ 
+ class _PDfBackgroundWidgetState extends State<PDfBackgroundWidget>
+     with AutomaticKeepAliveClientMixin {
++  Future<Uint8List?> _renderPage() async {
++    final filename = widget.provider!.filename;
++    final pageNo = (widget.provider!.page ?? 1);
++
++    PdfDocument? doc;
++    try {
++      if (filename != null && File(filename).existsSync()) {
++        doc = await PdfDocument.openFile(filename);
++      } else {
++        // Ask user to locate the file
++        final picked = await widget.provider!.onUnavailable(filename);
++        doc = await PdfDocument.openData(picked.toUint8List()!);
++      }
++      final page = await doc.getPage(pageNo);
++      final img = await page.render(
++        width: page.width * 2,
++        height: page.height * 2,
++        format: PdfPageImageFormat.jpeg,
++      );
++      await page.close();
++      await doc.close();
++      return img?.bytes;
++    } catch (_) {
++      doc?.close();
++      return null;
++    }
++  }
++
+   @override
+   Widget build(BuildContext context) {
+     super.build(context);
+-    return FutureBuilder(
+-        future:
+-            FilePickerCross.fromInternalPath(path: widget.provider!.filename!)
+-                .then((value) {
+-          return pdfImage(value, widget.provider!.page);
+-        }).catchError((e) => widget.provider!
+-                    .onUnavailable(widget.provider!.filename)
+-                    .then((value) => pdfImage(value, widget.provider!.page))),
+-        builder: (context, AsyncSnapshot<Uint8List> snapshot) =>
+-            (snapshot.hasData)
+-                ? Image.memory(snapshot.data!)
+-                : Center(child: CircularProgressIndicator()));
++    return FutureBuilder<Uint8List?>(
++        future: _renderPage(),
++        builder: (context, snapshot) {
++          if (snapshot.hasData && snapshot.data != null) {
++            return Image.memory(snapshot.data!, fit: BoxFit.fill);
++          }
++          if (snapshot.hasError) return Container(color: Colors.white);
++          return const Center(child: CircularProgressIndicator());
++        });
+   }
+ 
+   @override
+diff --git a/lib/src/XppFile.dart b/lib/src/XppFile.dart
+index 835a704..fd9dd1e 100644
+--- a/lib/src/XppFile.dart
++++ b/lib/src/XppFile.dart
+@@ -14,8 +14,8 @@ import 'package:xournalpp/layer_contents/XppTexImage.dart';
+ import 'package:xournalpp/layer_contents/XppText.dart';
+ import 'package:xournalpp/pages/CanvasPage.dart';
+ import 'package:xournalpp/pages/OpenPage.dart';
++import 'package:pdfx/pdfx.dart';
+ import 'package:xournalpp/src/HexColor.dart';
+-import 'package:xournalpp/src/PdfImage.dart';
+ import 'package:xournalpp/src/XppBackground.dart';
+ 
+ import 'XppLayer.dart';
+@@ -33,20 +33,22 @@ class XppFile {
+ 
+   /// creates an [XppFile] from a PDF document opened in a [FilePickerCross]
+   static Future<XppFile> importPdf({required FilePickerCross pdf}) async {
+-    final pageCount = await pdfPageCount(pdf);
+     pdf.saveToPath(path: pdf.path!);
++    final doc = await PdfDocument.openFile(pdf.path!);
++    final pageCount = doc.pagesCount;
+     XppFile file = XppFile.empty(title: pdf.fileName)..pages!.clear();
+-    for (int i = 0; i < pageCount; i++) {
+-      final size = await pdfPageSize(pdf, i);
++    for (int i = 1; i <= pageCount; i++) {
++      final page = await doc.getPage(i);
++      final size = XppPageSize(width: page.width, height: page.height);
++      await page.close();
+       file.pages!.add(XppPage.empty()
+         ..pageSize = size
+         ..background = XppBackgroundPdf(
+-            onUnavailable: ((String p) =>
+-                    throw ("$p is not available even though just imported"))
+-                as Future<FilePickerCross> Function(String?),
++            onUnavailable: (_) async => throw ('PDF not available'),
+             page: i,
+             filename: pdf.path));
+     }
++    await doc.close();
+     return file;
+   }
+ 
+diff --git a/lib/widgets/DropFile.dart b/lib/widgets/DropFile.dart
+index 917b94c..3a3313a 100644
+--- a/lib/widgets/DropFile.dart
++++ b/lib/widgets/DropFile.dart
+@@ -1,173 +1,7 @@
+-import 'package:file_picker_cross/file_picker_cross.dart';
+-import 'package:flutter/material.dart';
+-import 'package:flutter/services.dart';
+-import 'package:flutter_dropzone/flutter_dropzone.dart';
+-import 'package:xournalpp/generated/l10n.dart';
+-import 'package:xournalpp/pages/CanvasPage.dart';
+-import 'package:xournalpp/pages/OpenPage.dart';
+-import 'package:xournalpp/src/XppFile.dart';
+-
+-class DropFile extends StatefulWidget {
+-  @override
+-  _DropFileState createState() => _DropFileState();
+-}
+-
+-class _DropFileState extends State<DropFile> {
+-  late DropzoneViewController _fileDropController;
+-
+-  bool _fileHover = false;
+-  bool _loadingDropZone = true;
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    return Padding(
+-      padding: const EdgeInsets.all(8.0),
+-      child: Card(
+-        child: AnimatedContainer(
+-            duration: Duration(milliseconds: 250),
+-            constraints: BoxConstraints(maxHeight: 256),
+-            child: Stack(
+-              children: [
+-                Builder(
+-                  builder: (context) => DropzoneView(
+-                    onDrop: (file) {
+-                      setState(() {
+-                        _fileHover = false;
+-                        _loadingDropZone = true;
+-                      });
+-
+-                      _fileDropController.getFilename(file).then((filename) {
+-                        var controller =
+-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+-                          content: Text(
+-                              S.of(context).openingFile + filename + ' ...'),
+-                          duration: Duration(days: 999),
+-                        ));
+-                        _fileDropController.getFileData(file).then((bytes) {
+-                          XppFile.fromFilePickerCross(
+-                                  FilePickerCross(bytes,
+-                                      path: filename,
+-                                      type: FileTypeCross.custom,
+-                                      fileExtension: 'xopp'),
+-                                  (percentage) {},
+-                                  showMissingFileDialog)
+-                              .then((file) {
+-                            controller.close();
+-                            setState(() {
+-                              _loadingDropZone = false;
+-                            });
+-                            Navigator.of(context).push(MaterialPageRoute(
+-                                builder: (context) => CanvasPage(
+-                                      file: file,
+-                                    )));
+-                          }).catchError((e) {
+-                            controller.close();
+-                            setState(() {
+-                              _loadingDropZone = false;
+-                            });
+-                            showDialog(
+-                                context: context,
+-                                builder: (context) => AlertDialog(
+-                                      title:
+-                                          Text(S.of(context).errorOpeningFile),
+-                                      content: SelectableText(S
+-                                              .of(context)
+-                                              .imVerySorryButICouldntReadTheFile +
+-                                          '$filename' +
+-                                          S
+-                                              .of(context)
+-                                              .areYouSureIHaveThePermissionAndAreYou +
+-                                          '\n${e.toString()}'),
+-                                      actions: [
+-                                        TextButton(
+-                                            onPressed: () => Clipboard.setData(
+-                                                ClipboardData(
+-                                                    text: e.toString())),
+-                                            child: Text(S
+-                                                .of(context)
+-                                                .copyErrorMessage)),
+-                                        TextButton(
+-                                          onPressed: () =>
+-                                              Navigator.of(context).pop(),
+-                                          child: Text(S.of(context).okay),
+-                                        ),
+-                                      ],
+-                                    ));
+-                          });
+-                        });
+-                      });
+-                    },
+-                    onHover: () {
+-                      setState(() => _fileHover = true);
+-                    },
+-                    onLeave: () {
+-                      setState(() => _fileHover = false);
+-                    },
+-                    onLoaded: () {
+-                      setState(() => _loadingDropZone = false);
+-                    },
+-                    onError: (message) {
+-                      setState(() {
+-                        _fileHover = false;
+-                        _loadingDropZone = false;
+-                      });
+-                      showDialog(
+-                          context: context,
+-                          builder: (context) => AlertDialog(
+-                                title: Text(S.of(context).errorLoadingFile),
+-                                actions: [
+-                                  TextButton(
+-                                    onPressed: () => Clipboard.setData(
+-                                        ClipboardData(text: message)),
+-                                    child: Text(S.of(context).copyErrorMessage),
+-                                  ),
+-                                  TextButton(
+-                                      onPressed: () =>
+-                                          Navigator.of(context).pop(),
+-                                      child: Text(S.of(context).okay))
+-                                ],
+-                                content: Text(
+-                                    S.of(context).theFollowingErrorWasDetected +
+-                                        '\n' +
+-                                        message!),
+-                              ));
+-                    },
+-                    onCreated: (controller) {
+-                      _fileDropController = controller;
+-                    },
+-                    operation: DragOperation.all,
+-                    //mime: ['application/x-xopp'],
+-                  ),
+-                ),
+-                Center(
+-                  child: _loadingDropZone
+-                      ? CircularProgressIndicator()
+-                      : DefaultTextStyle.merge(
+-                          style: TextStyle(
+-                              color: Theme.of(context).colorScheme.onPrimary),
+-                          child: Row(
+-                            children: [
+-                              Icon(
+-                                Icons.open_with,
+-                                color: Theme.of(context).colorScheme.onPrimary,
+-                              ),
+-                              Text(S.of(context).dropFilesToOpen)
+-                            ],
+-                            mainAxisAlignment: MainAxisAlignment.center,
+-                          ),
+-                        ),
+-                ),
+-              ],
+-            ),
+-            decoration: BoxDecoration(
+-              color: _fileHover
+-                  ? Theme.of(context).accentColor
+-                  : Theme.of(context).backgroundColor,
+-              border: _fileHover
+-                  ? Border.all(color: Theme.of(context).primaryColor, width: 2)
+-                  : Border.all(color: Colors.transparent, width: 2),
+-            )),
+-      ),
+-    );
+-  }
+-}
++// Web-only drag-and-drop widget — stubbed out for Android build.
++import 'package:flutter/material.dart';
++
++class DropFile extends StatelessWidget {
++  @override
++  Widget build(BuildContext context) => const SizedBox.shrink();
++}
+diff --git a/lib/widgets/EditingToolbar.dart b/lib/widgets/EditingToolbar.dart
+index a0fb33c..9217fd9 100644
+--- a/lib/widgets/EditingToolbar.dart
++++ b/lib/widgets/EditingToolbar.dart
+@@ -82,7 +82,6 @@ class EditingToolBarState extends State<EditingToolBar> {
+       child: FloatingActionButton(
+         heroTag: tool,
+         onPressed: () {
+-          // if tool is selected, then show the settings
+           if(enableSettings && getTool() == tool){
+             showCustomDialog(context);
+           } else {
+@@ -92,8 +91,9 @@ class EditingToolBarState extends State<EditingToolBar> {
+         },
+         child: FaIcon(icon),
+         elevation: 6,
++        foregroundColor: Colors.white,
+         backgroundColor:
+-        getTool() == tool ? (!usePrimaryColor ? widget.getColor!() : null) : Theme.of(context).cardColor,
++        getTool() == tool ? (!usePrimaryColor ? widget.getColor!() : Theme.of(context).colorScheme.primary) : Theme.of(context).colorScheme.surfaceContainerHighest,
+       ),
+     );
+   }
+@@ -107,7 +107,7 @@ class EditingToolBarState extends State<EditingToolBar> {
+   void setTool(EditingTool tool){
+     PointerDeviceKind? device = currentDevice;
+     if (Platform.isAndroid || Platform.isIOS) {
+-      device = PointerDeviceKind.stylus;
++      device = PointerDeviceKind.touch;
+     }
+     widget.deviceMap![device] = tool;
+   }
+@@ -115,7 +115,7 @@ class EditingToolBarState extends State<EditingToolBar> {
+   EditingTool? getTool() {
+     PointerDeviceKind? device = currentDevice;
+     if (Platform.isAndroid || Platform.isIOS) {
+-      device = PointerDeviceKind.stylus;
++      device = PointerDeviceKind.touch;
+     }
+     return widget.deviceMap![device];
+   }
+diff --git a/lib/widgets/MainDrawer.dart b/lib/widgets/MainDrawer.dart
+index d72fcf7..644349d 100644
+--- a/lib/widgets/MainDrawer.dart
++++ b/lib/widgets/MainDrawer.dart
+@@ -1,5 +1,5 @@
+ import 'package:flutter/material.dart';
+-import 'package:package_info/package_info.dart';
++import 'package:package_info_plus/package_info_plus.dart';
+ import 'package:url_launcher/url_launcher.dart';
+ import 'package:xournalpp/generated/l10n.dart';
+ import 'package:xournalpp/pages/CanvasPage.dart';
+@@ -40,10 +40,10 @@ class _MainDrawerState extends State<MainDrawer> {
+                   child: UserAccountsDrawerHeader(
+                     accountName: Text(
+                       'Xournal++',
+-                      style: Theme.of(context).textTheme.headline1,
++                      style: Theme.of(context).textTheme.displayLarge,
+                     ),
+                     accountEmail: Text(S.of(context).mobileEditionUnofficial,
+-                        style: Theme.of(context).textTheme.headline6),
++                        style: Theme.of(context).textTheme.titleLarge),
+                     currentAccountPicture: Image.asset('assets/xournalpp.png'),
+                   ),
+                 ),
+diff --git a/lib/widgets/PointerListener.dart b/lib/widgets/PointerListener.dart
+index c1892c3..011af3a 100644
+--- a/lib/widgets/PointerListener.dart
++++ b/lib/widgets/PointerListener.dart
+@@ -2,6 +2,7 @@ import 'dart:ui';
+ 
+ import 'package:flutter/gestures.dart';
+ import 'package:flutter/material.dart';
++import 'package:xournalpp/layer_contents/XppImage.dart';
+ import 'package:xournalpp/layer_contents/XppStroke.dart';
+ import 'package:xournalpp/layer_contents/XppTexImage.dart';
+ import 'package:xournalpp/layer_contents/XppText.dart';
+@@ -88,6 +89,17 @@ class PointerListenerState extends State<PointerListener> {
+                 coordinates:
+                     Offset(data.localPosition.dx, data.localPosition.dy),
+                 radius: widget.strokeWidth);
++
++          if (isWhiteout(data)) {
++            final double width = (data.pressure == 0
++                ? (widget.strokeWidth ?? 5)
++                : data.pressure * widget.strokeWidth!) * 6;
++            points.add(XppStrokePoint(
++                x: data.localPosition.dx,
++                y: data.localPosition.dy,
++                width: width));
++            setState(() {});
++          }
+         },
+         onPointerDown: (data) {
+           if (_detectTwoFingerGesture(data, shouldPop: true)) return;
+@@ -106,10 +118,19 @@ class PointerListenerState extends State<PointerListener> {
+             });
+           }
+           if (isText(data)) {
+-            XppText(
+-                offset: data.localPosition,
+-                color: widget.color,
+-                size: widget.strokeWidth! * 3);
++            XppText.edit(
++              context: context,
++              topLeft: data.localPosition,
++              color: widget.color,
++              size: widget.strokeWidth! * 3,
++            ).then((value) {
++              if (value != null) widget.onNewContent!(value);
++            });
++          }
++          if (isImage(data)) {
++            XppImage.open(topLeft: data.localPosition)
++                .then((value) => widget.onNewContent!(value))
++                .catchError((_) {});
+           }
+         },
+         onPointerUp: (data) {
+@@ -193,11 +214,22 @@ class PointerListenerState extends State<PointerListener> {
+         widget.toolData[data.kind] == EditingTool.LATEX);
+   }
+ 
++  bool isImage(PointerEvent data) {
++    return (widget.toolData.keys.contains(data.kind) &&
++        widget.toolData[data.kind] == EditingTool.IMAGE);
++  }
++
++  bool isWhiteout(PointerEvent data) {
++    return (widget.toolData.keys.contains(data.kind) &&
++        widget.toolData[data.kind] == EditingTool.WHITEOUT);
++  }
++
+   XppStrokeTool getToolFromPointer(PointerEvent data) {
+     XppStrokeTool tool = XppStrokeTool.PEN;
+     if (isHighlighter(data))
+       tool = XppStrokeTool.HIGHLIGHTER;
+     else if (isEraser(data)) tool = XppStrokeTool.ERASER;
++    else if (isWhiteout(data)) tool = XppStrokeTool.ERASER;
+     return tool;
+   }
+ 
+diff --git a/lib/widgets/QuotaTile.dart b/lib/widgets/QuotaTile.dart
+index 5795d44..494aa69 100644
+--- a/lib/widgets/QuotaTile.dart
++++ b/lib/widgets/QuotaTile.dart
+@@ -30,7 +30,7 @@ class _QuotaTileState extends State<QuotaTile> {
+                   (quota!.relative * 100).round().toString() +
+                   '% ' +
+                   S.of(context).used,
+-              style: Theme.of(context).textTheme.subtitle2,
++              style: Theme.of(context).textTheme.titleSmall,
+             )
+           : Center(
+               child: CircularProgressIndicator(),
+diff --git a/lib/widgets/ToolBoxBottomSheet.dart b/lib/widgets/ToolBoxBottomSheet.dart
+index cd06982..5b2fcaa 100644
+--- a/lib/widgets/ToolBoxBottomSheet.dart
++++ b/lib/widgets/ToolBoxBottomSheet.dart
+@@ -41,7 +41,7 @@ class _ToolBoxBottomSheetState extends State<ToolBoxBottomSheet> {
+                 children: [
+                   Text(
+                     S.of(context).pageBackground,
+-                    style: Theme.of(context).textTheme.headline4,
++                    style: Theme.of(context).textTheme.headlineMedium,
+                   ),
+                   Container(
+                     height: 128,
+diff --git a/lib/widgets/XppPageStack.dart b/lib/widgets/XppPageStack.dart
+index 43bfc44..63621aa 100644
+--- a/lib/widgets/XppPageStack.dart
++++ b/lib/widgets/XppPageStack.dart
+@@ -4,14 +4,16 @@ import 'dart:ui' as ui;
+ 
+ import 'package:flutter/material.dart';
+ import 'package:flutter/rendering.dart';
++import 'package:xournalpp/layer_contents/XppText.dart';
+ import 'package:xournalpp/src/XppBackground.dart';
+ import 'package:xournalpp/src/XppLayer.dart';
+ import 'package:xournalpp/src/XppPage.dart';
+ 
+ class XppPageStack extends StatefulWidget {
+   final XppPage? page;
++  final Function(XppContent)? onEditContent;
+ 
+-  const XppPageStack({Key? key, this.page}) : super(key: key);
++  const XppPageStack({Key? key, this.page, this.onEditContent}) : super(key: key);
+ 
+   @override
+   XppPageStackState createState() => XppPageStackState();
+@@ -44,6 +46,7 @@ class XppPageStackState extends State<XppPageStack>
+ 
+     children.addAll(page!.layers!.map((e) => XppLayerStack(
+           layer: e,
++          onEditContent: widget.onEditContent,
+         )));
+     return RepaintBoundary(
+         key: pngKey,
+@@ -79,8 +82,9 @@ class XppPageStackState extends State<XppPageStack>
+ 
+ class XppLayerStack extends StatefulWidget {
+   final XppLayer? layer;
++  final Function(XppContent)? onEditContent;
+ 
+-  const XppLayerStack({Key? key, this.layer}) : super(key: key);
++  const XppLayerStack({Key? key, this.layer, this.onEditContent}) : super(key: key);
+   @override
+   _XppLayerStackState createState() => _XppLayerStackState();
+ }
+@@ -89,7 +93,7 @@ class _XppLayerStackState extends State<XppLayerStack> {
+   Map<XppContent, Widget> renderedContent = {};
+   @override
+   Widget build(BuildContext context) {
+-    List<Widget?> children = [];
++    List<Widget> children = [];
+     widget.layer!.content!.forEach((element) {
+       if (element == null) return;
+       if (!renderedContent.keys.contains(element)) {
+@@ -99,10 +103,18 @@ class _XppLayerStackState extends State<XppLayerStack> {
+           left: element.getOffset()?.dx ?? 0,
+         );
+       }
+-      children.add(renderedContent[element]);
++      Widget? w = renderedContent[element];
++      if (w == null) return;
++      if (element is XppText && widget.onEditContent != null) {
++        w = GestureDetector(
++          onDoubleTap: () => widget.onEditContent!(element),
++          child: w,
++        );
++      }
++      children.add(w);
+     });
+     return Stack(
+-      children: children as List<Widget>,
++      children: children,
+     );
+   }
+ }
+diff --git a/linux/flutter/generated_plugin_registrant.cc b/linux/flutter/generated_plugin_registrant.cc
+index b2b4176..7299b5c 100644
+--- a/linux/flutter/generated_plugin_registrant.cc
++++ b/linux/flutter/generated_plugin_registrant.cc
+@@ -7,16 +7,12 @@
+ #include "generated_plugin_registrant.h"
+ 
+ #include <file_selector_linux/file_selector_plugin.h>
+-#include <printing/printing_plugin.h>
+ #include <url_launcher_linux/url_launcher_plugin.h>
+ 
+ void fl_register_plugins(FlPluginRegistry* registry) {
+   g_autoptr(FlPluginRegistrar) file_selector_linux_registrar =
+       fl_plugin_registry_get_registrar_for_plugin(registry, "FileSelectorPlugin");
+   file_selector_plugin_register_with_registrar(file_selector_linux_registrar);
+-  g_autoptr(FlPluginRegistrar) printing_registrar =
+-      fl_plugin_registry_get_registrar_for_plugin(registry, "PrintingPlugin");
+-  printing_plugin_register_with_registrar(printing_registrar);
+   g_autoptr(FlPluginRegistrar) url_launcher_linux_registrar =
+       fl_plugin_registry_get_registrar_for_plugin(registry, "UrlLauncherPlugin");
+   url_launcher_plugin_register_with_registrar(url_launcher_linux_registrar);
+diff --git a/linux/flutter/generated_plugins.cmake b/linux/flutter/generated_plugins.cmake
+index 3511593..786ff5c 100644
+--- a/linux/flutter/generated_plugins.cmake
++++ b/linux/flutter/generated_plugins.cmake
+@@ -4,10 +4,12 @@
+ 
+ list(APPEND FLUTTER_PLUGIN_LIST
+   file_selector_linux
+-  printing
+   url_launcher_linux
+ )
+ 
++list(APPEND FLUTTER_FFI_PLUGIN_LIST
++)
++
+ set(PLUGIN_BUNDLED_LIBRARIES)
+ 
+ foreach(plugin ${FLUTTER_PLUGIN_LIST})
+@@ -16,3 +18,8 @@ foreach(plugin ${FLUTTER_PLUGIN_LIST})
+   list(APPEND PLUGIN_BUNDLED_LIBRARIES $<TARGET_FILE:${plugin}_plugin>)
+   list(APPEND PLUGIN_BUNDLED_LIBRARIES ${${plugin}_bundled_libraries})
+ endforeach(plugin)
++
++foreach(ffi_plugin ${FLUTTER_FFI_PLUGIN_LIST})
++  add_subdirectory(flutter/ephemeral/.plugin_symlinks/${ffi_plugin}/linux plugins/${ffi_plugin})
++  list(APPEND PLUGIN_BUNDLED_LIBRARIES ${${ffi_plugin}_bundled_libraries})
++endforeach(ffi_plugin)
+diff --git a/macos/Flutter/GeneratedPluginRegistrant.swift b/macos/Flutter/GeneratedPluginRegistrant.swift
+index e533eb6..e3a008a 100644
+--- a/macos/Flutter/GeneratedPluginRegistrant.swift
++++ b/macos/Flutter/GeneratedPluginRegistrant.swift
+@@ -9,9 +9,8 @@ import file_selector_macos
+ import package_info
+ import package_info_plus_macos
+ import path_provider_macos
+-import printing
+-import share_plus_macos
+-import shared_preferences_macos
++import pdfx
++import shared_preferences_foundation
+ import url_launcher_macos
+ 
+ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
+@@ -19,8 +18,7 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
+   FLTPackageInfoPlugin.register(with: registry.registrar(forPlugin: "FLTPackageInfoPlugin"))
+   FLTPackageInfoPlusPlugin.register(with: registry.registrar(forPlugin: "FLTPackageInfoPlusPlugin"))
+   PathProviderPlugin.register(with: registry.registrar(forPlugin: "PathProviderPlugin"))
+-  PrintingPlugin.register(with: registry.registrar(forPlugin: "PrintingPlugin"))
+-  SharePlusMacosPlugin.register(with: registry.registrar(forPlugin: "SharePlusMacosPlugin"))
++  PdfxPlugin.register(with: registry.registrar(forPlugin: "PdfxPlugin"))
+   SharedPreferencesPlugin.register(with: registry.registrar(forPlugin: "SharedPreferencesPlugin"))
+   UrlLauncherPlugin.register(with: registry.registrar(forPlugin: "UrlLauncherPlugin"))
+ }
+diff --git a/pubspec.lock b/pubspec.lock
+index c9c69a1..53de0c2 100644
+--- a/pubspec.lock
++++ b/pubspec.lock
+@@ -5,285 +5,268 @@ packages:
+     dependency: "direct main"
+     description:
+       name: after_layout
+-      url: "https://pub.dartlang.org"
++      sha256: "95a1cb2ca1464f44f14769329fbf15987d20ab6c88f8fc5d359bd362be625f29"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "1.1.0"
++    version: "1.2.0"
+   archive:
+     dependency: "direct main"
+     description:
+       name: archive
+-      url: "https://pub.dartlang.org"
++      sha256: cb6a278ef2dbb298455e1a713bda08524a175630ec643a242c399c932a0a1f7d
++      url: "https://pub.dev"
+     source: hosted
+-    version: "3.1.11"
++    version: "3.6.1"
+   args:
+     dependency: transitive
+     description:
+       name: args
+-      url: "https://pub.dartlang.org"
++      sha256: d0481093c50b1da8910eb0bb301626d4d8eb7284aa739614d2b394ee09e3ea04
++      url: "https://pub.dev"
+     source: hosted
+-    version: "2.3.0"
++    version: "2.7.0"
+   async:
+     dependency: transitive
+     description:
+       name: async
+-      url: "https://pub.dartlang.org"
++      sha256: "947bfcf187f74dbc5e146c9eb9c0f10c9f8b30743e341481c1e2ed3ecc18c20c"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "2.8.2"
+-  barcode:
+-    dependency: transitive
+-    description:
+-      name: barcode
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "2.2.0"
++    version: "2.11.0"
+   boolean_selector:
+     dependency: transitive
+     description:
+       name: boolean_selector
+-      url: "https://pub.dartlang.org"
++      sha256: "6cfb5af12253eaf2b368f07bacc5a80d1301a071c73360d746b7f2e32d762c66"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "2.1.0"
+-  built_collection:
+-    dependency: transitive
+-    description:
+-      name: built_collection
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "5.1.1"
+-  built_value:
++    version: "2.1.1"
++  characters:
+     dependency: transitive
+     description:
+-      name: built_value
+-      url: "https://pub.dartlang.org"
++      name: characters
++      sha256: "04a925763edad70e8443c99234dc3328f442e811f1d8fd1a72f1c8ad0f69a605"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "8.1.4"
+-  catex:
++    version: "1.3.0"
++  charcode:
+     dependency: transitive
+     description:
+-      name: catex
+-      url: "https://pub.dartlang.org"
++      name: charcode
++      sha256: fb98c0f6d12c920a02ee2d998da788bca066ca5f148492b7085ee23372b12306
++      url: "https://pub.dev"
+     source: hosted
+-    version: "0.0.1+8"
+-  characters:
++    version: "1.3.1"
++  checked_yaml:
+     dependency: transitive
+     description:
+-      name: characters
+-      url: "https://pub.dartlang.org"
++      name: checked_yaml
++      sha256: feb6bed21949061731a7a75fc5d2aa727cf160b91af9a3e464c5e3a32e28b5ff
++      url: "https://pub.dev"
+     source: hosted
+-    version: "1.2.0"
+-  charcode:
++    version: "2.0.3"
++  cli_util:
+     dependency: transitive
+     description:
+-      name: charcode
+-      url: "https://pub.dartlang.org"
++      name: cli_util
++      sha256: ff6785f7e9e3c38ac98b2fb035701789de90154024a75b6cb926445e83197d1c
++      url: "https://pub.dev"
+     source: hosted
+-    version: "1.3.1"
++    version: "0.4.2"
+   clock:
+     dependency: transitive
+     description:
+       name: clock
+-      url: "https://pub.dartlang.org"
++      sha256: cb6d7f03e1de671e34607e909a7213e31d7752be4fb66a86d29fe1eb14bfb5cf
++      url: "https://pub.dev"
+     source: hosted
+-    version: "1.1.0"
++    version: "1.1.1"
+   collection:
+     dependency: transitive
+     description:
+       name: collection
+-      url: "https://pub.dartlang.org"
++      sha256: ee67cb0715911d28db6bf4af1026078bd6f0128b07a5f66fb2ed94ec6783c09a
++      url: "https://pub.dev"
+     source: hosted
+-    version: "1.15.0"
+-  convert:
+-    dependency: transitive
+-    description:
+-      name: convert
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "3.0.1"
++    version: "1.18.0"
+   cross_file:
+     dependency: transitive
+     description:
+       name: cross_file
+-      url: "https://pub.dartlang.org"
++      sha256: "552ffd2f851d4314958e6265452af1891959e00cd32b6d17452c5b836e27a0fa"
++      url: "https://pub.dev"
+     source: hosted
+     version: "0.3.2"
+   crypto:
+     dependency: transitive
+     description:
+       name: crypto
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "3.0.1"
+-  dds:
+-    dependency: transitive
+-    description:
+-      name: dds
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "2.1.6+3"
+-  devtools_shared:
+-    dependency: transitive
+-    description:
+-      name: devtools_shared
+-      url: "https://pub.dartlang.org"
++      sha256: c8ea0233063ba03258fbcf2ca4d6dadfefe14f02fab57702265467a19f27fadf
++      url: "https://pub.dev"
+     source: hosted
+-    version: "2.8.0"
++    version: "3.0.7"
+   disk_space:
+     dependency: transitive
+     description:
+       name: disk_space
+-      url: "https://pub.dartlang.org"
++      sha256: fb27eb2d09ac04784f45b95b1355538b2355c76a081eeaa8439d1a5cfa263888
++      url: "https://pub.dev"
+     source: hosted
+     version: "0.2.1"
+-  dwds:
+-    dependency: "direct main"
++  extension:
++    dependency: transitive
+     description:
+-      name: dwds
+-      url: "https://pub.dartlang.org"
++      name: extension
++      sha256: be3a6b7f8adad2f6e2e8c63c895d19811fcf203e23466c6296267941d0ff4f24
++      url: "https://pub.dev"
+     source: hosted
+-    version: "11.5.1"
++    version: "0.6.0"
+   fake_async:
+     dependency: transitive
+     description:
+       name: fake_async
+-      url: "https://pub.dartlang.org"
++      sha256: "511392330127add0b769b75a987850d136345d9227c6b94c96a04cf4a391bf78"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "1.2.0"
++    version: "1.3.1"
+   ffi:
+     dependency: transitive
+     description:
+       name: ffi
+-      url: "https://pub.dartlang.org"
++      sha256: "35d0f481d939de0d640b3db9a7aa36a52cd22054a798a73b4f50bdad5ce12678"
++      url: "https://pub.dev"
+     source: hosted
+     version: "1.1.2"
+   file:
+     dependency: transitive
+     description:
+       name: file
+-      url: "https://pub.dartlang.org"
++      sha256: b69516f2c26a5bcac4eee2e32512e1a5205ab312b3536c1c1227b2b942b5f9ad
++      url: "https://pub.dev"
+     source: hosted
+     version: "6.1.2"
+   file_picker:
+     dependency: transitive
+     description:
+       name: file_picker
+-      url: "https://pub.dartlang.org"
++      sha256: "2a9640a2e87ad41e4d641cd990a84424948b553420ea29f35392114d9ec0331d"
++      url: "https://pub.dev"
+     source: hosted
+     version: "4.3.3"
+   file_picker_cross:
+     dependency: "direct main"
+     description:
+       name: file_picker_cross
+-      url: "https://pub.dartlang.org"
++      sha256: cbbaadbda1898506f108fef1d32d9e92e98ad9d464166dd8047461ee87b71991
++      url: "https://pub.dev"
+     source: hosted
+     version: "4.5.0"
+   file_selector:
+     dependency: transitive
+     description:
+       name: file_selector
+-      url: "https://pub.dartlang.org"
++      sha256: fb48ddfc0d11379532f3f87fdf7df2cc3a4c6a8ba9ba2bd27440bae0c4dd7aa3
++      url: "https://pub.dev"
+     source: hosted
+     version: "0.8.2+1"
+   file_selector_linux:
+     dependency: transitive
+     description:
+       name: file_selector_linux
+-      url: "https://pub.dartlang.org"
++      sha256: d9b12819251f3704a6664c2046c287cd36beca0f2f9bb992ac08f33e9eb2ea51
++      url: "https://pub.dev"
+     source: hosted
+     version: "0.0.2+1"
+   file_selector_macos:
+     dependency: transitive
+     description:
+       name: file_selector_macos
+-      url: "https://pub.dartlang.org"
++      sha256: "611370528284753d852f59d390c6d58a531131fdb463cdf30ffec2174ba95663"
++      url: "https://pub.dev"
+     source: hosted
+     version: "0.0.4+1"
+   file_selector_platform_interface:
+     dependency: transitive
+     description:
+       name: file_selector_platform_interface
+-      url: "https://pub.dartlang.org"
++      sha256: "3bf26fbd775000b8e3b4692dfecc55f7e9f259e56d96e19fb4b473a7bea19ffe"
++      url: "https://pub.dev"
+     source: hosted
+     version: "2.0.4"
+   file_selector_web:
+     dependency: transitive
+     description:
+       name: file_selector_web
+-      url: "https://pub.dartlang.org"
++      sha256: "4b1d6874a3a751133c009c689cf4a721c56f9eee12bc02aa8dac687f12a5c7cd"
++      url: "https://pub.dev"
+     source: hosted
+     version: "0.8.1+3"
+   file_selector_windows:
+     dependency: transitive
+     description:
+       name: file_selector_windows
+-      url: "https://pub.dartlang.org"
++      sha256: "69f4246b7766285d56abe9e755dcdf733f34b726bb64a97425315e777b232207"
++      url: "https://pub.dev"
+     source: hosted
+     version: "0.0.2+1"
+   fixnum:
+     dependency: transitive
+     description:
+       name: fixnum
+-      url: "https://pub.dartlang.org"
++      sha256: b6dc7065e46c974bc7c5f143080a6764ec7a4be6da1285ececdc37be96de53be
++      url: "https://pub.dev"
+     source: hosted
+-    version: "1.0.0"
++    version: "1.1.1"
+   flutter:
+     dependency: "direct main"
+     description: flutter
+     source: sdk
+     version: "0.0.0"
+-  flutter_absolute_path:
+-    dependency: "direct main"
+-    description:
+-      name: flutter_absolute_path
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "1.0.6"
+   flutter_colorpicker:
+     dependency: "direct main"
+     description:
+       name: flutter_colorpicker
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "1.0.3"
+-  flutter_dropzone:
+-    dependency: "direct main"
+-    description:
+-      name: flutter_dropzone
+-      url: "https://pub.dartlang.org"
++      sha256: "969de5f6f9e2a570ac660fb7b501551451ea2a1ab9e2097e89475f60e07816ea"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "3.0.5"
+-  flutter_dropzone_platform_interface:
+-    dependency: transitive
+-    description:
+-      name: flutter_dropzone_platform_interface
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "2.0.5"
+-  flutter_dropzone_web:
+-    dependency: transitive
+-    description:
+-      name: flutter_dropzone_web
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "3.0.8"
++    version: "1.1.0"
+   flutter_launcher_icons:
+     dependency: "direct dev"
+     description:
+       name: flutter_launcher_icons
+-      url: "https://pub.dartlang.org"
++      sha256: "10f13781741a2e3972126fae08393d3c4e01fa4cd7473326b94b72cf594195e7"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "0.9.2"
++    version: "0.14.4"
+   flutter_localizations:
+     dependency: "direct main"
+     description: flutter
+     source: sdk
+     version: "0.0.0"
++  flutter_math_fork:
++    dependency: "direct main"
++    description:
++      name: flutter_math_fork
++      sha256: "6d5f2f1aa57ae539ffb0a04bb39d2da67af74601d685a161aff7ce5bda5fa407"
++      url: "https://pub.dev"
++    source: hosted
++    version: "0.7.4"
+   flutter_plugin_android_lifecycle:
+     dependency: transitive
+     description:
+       name: flutter_plugin_android_lifecycle
+-      url: "https://pub.dartlang.org"
++      sha256: "5c574d21b98ec92adab05ead10afd2b13ff5856c7ca79696edb338a9dd8ed387"
++      url: "https://pub.dev"
+     source: hosted
+     version: "2.0.5"
++  flutter_svg:
++    dependency: transitive
++    description:
++      name: flutter_svg
++      sha256: d39e7f95621fc84376bc0f7d504f05c3a41488c562f4a8ad410569127507402c
++      url: "https://pub.dev"
++    source: hosted
++    version: "2.0.9"
+   flutter_test:
+     dependency: "direct dev"
+     description: flutter
+@@ -298,553 +281,623 @@ packages:
+     dependency: "direct main"
+     description:
+       name: font_awesome_flutter
+-      url: "https://pub.dartlang.org"
++      sha256: b738e35f8bb4957896c34957baf922f99c5d415b38ddc8b070d14b7fa95715d4
++      url: "https://pub.dev"
+     source: hosted
+-    version: "9.2.0"
++    version: "10.9.1"
+   http:
+     dependency: transitive
+     description:
+       name: http
+-      url: "https://pub.dartlang.org"
++      sha256: "2ed163531e071c2c6b7c659635112f24cb64ecbebf6af46b550d536c0b1aa112"
++      url: "https://pub.dev"
+     source: hosted
+     version: "0.13.4"
+-  http_multi_server:
+-    dependency: transitive
+-    description:
+-      name: http_multi_server
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "3.0.1"
+   http_parser:
+     dependency: transitive
+     description:
+       name: http_parser
+-      url: "https://pub.dartlang.org"
++      sha256: e362d639ba3bc07d5a71faebb98cde68c05bfbcfbbb444b60b6f60bb67719185
++      url: "https://pub.dev"
+     source: hosted
+     version: "4.0.0"
+   image:
+     dependency: transitive
+     description:
+       name: image
+-      url: "https://pub.dartlang.org"
++      sha256: f31d52537dc417fdcde36088fdf11d191026fd5e4fae742491ebd40e5a8bea7d
++      url: "https://pub.dev"
+     source: hosted
+-    version: "3.1.1"
++    version: "4.3.0"
+   intl:
+     dependency: "direct main"
+     description:
+       name: intl
+-      url: "https://pub.dartlang.org"
++      sha256: d6f56758b7d3014a48af9701c085700aac781a92a87a62b1333b46d8879661cf
++      url: "https://pub.dev"
+     source: hosted
+-    version: "0.17.0"
++    version: "0.19.0"
+   js:
+     dependency: transitive
+     description:
+       name: js
+-      url: "https://pub.dartlang.org"
++      sha256: d9bdfd70d828eeb352390f81b18d6a354ef2044aa28ef25682079797fa7cd174
++      url: "https://pub.dev"
+     source: hosted
+     version: "0.6.3"
+-  json_rpc_2:
++  json_annotation:
+     dependency: transitive
+     description:
+-      name: json_rpc_2
+-      url: "https://pub.dartlang.org"
++      name: json_annotation
++      sha256: "1ce844379ca14835a50d2f019a3099f419082cfdd231cd86a142af94dd5c6bb1"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "3.0.1"
+-  katex_flutter:
+-    dependency: "direct main"
++    version: "4.9.0"
++  leak_tracker:
++    dependency: transitive
+     description:
+-      name: katex_flutter
+-      url: "https://pub.dartlang.org"
++      name: leak_tracker
++      sha256: "3f87a60e8c63aecc975dda1ceedbc8f24de75f09e4856ea27daf8958f2f0ce05"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "4.0.2+26"
+-  logging:
++    version: "10.0.5"
++  leak_tracker_flutter_testing:
+     dependency: transitive
+     description:
+-      name: logging
+-      url: "https://pub.dartlang.org"
++      name: leak_tracker_flutter_testing
++      sha256: "932549fb305594d82d7183ecd9fa93463e9914e1b67cacc34bc40906594a1806"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "1.0.2"
++    version: "3.0.5"
++  leak_tracker_testing:
++    dependency: transitive
++    description:
++      name: leak_tracker_testing
++      sha256: "6ba465d5d76e67ddf503e1161d1f4a6bc42306f9d66ca1e8f079a47290fb06d3"
++      url: "https://pub.dev"
++    source: hosted
++    version: "3.0.1"
+   matcher:
+     dependency: transitive
+     description:
+       name: matcher
+-      url: "https://pub.dartlang.org"
++      sha256: d2323aa2060500f906aa31a895b4030b6da3ebdcc5619d14ce1aada65cd161cb
++      url: "https://pub.dev"
+     source: hosted
+-    version: "0.12.11"
+-  matrix_gesture_detector:
+-    dependency: "direct main"
++    version: "0.12.16+1"
++  material_color_utilities:
++    dependency: transitive
+     description:
+-      name: matrix_gesture_detector
+-      url: "https://pub.dartlang.org"
++      name: material_color_utilities
++      sha256: f7142bb1154231d7ea5f96bc7bde4bda2a0945d2806bb11670e30b850d56bdec
++      url: "https://pub.dev"
+     source: hosted
+-    version: "0.2.0-nullsafety.1"
++    version: "0.11.1"
+   meta:
+     dependency: transitive
+     description:
+       name: meta
+-      url: "https://pub.dartlang.org"
++      sha256: bdb68674043280c3428e9ec998512fb681678676b3c54e773629ffe74419f8c7
++      url: "https://pub.dev"
+     source: hosted
+-    version: "1.7.0"
++    version: "1.15.0"
+   mime:
+     dependency: transitive
+     description:
+       name: mime
+-      url: "https://pub.dartlang.org"
++      sha256: fd5f81041e6a9fc9b9d7fa2cb8a01123f9f5d5d49136e06cb9dc7d33689529f4
++      url: "https://pub.dev"
+     source: hosted
+     version: "1.0.1"
+-  package_config:
++  nested:
+     dependency: transitive
+     description:
+-      name: package_config
+-      url: "https://pub.dartlang.org"
++      name: nested
++      sha256: "03bac4c528c64c95c722ec99280375a6f2fc708eec17c7b3f07253b626cd2a20"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "2.0.2"
++    version: "1.0.0"
+   package_info:
+-    dependency: "direct main"
++    dependency: transitive
+     description:
+       name: package_info
+-      url: "https://pub.dartlang.org"
++      sha256: "6c07d9d82c69e16afeeeeb6866fe43985a20b3b50df243091bfc4a4ad2b03b75"
++      url: "https://pub.dev"
+     source: hosted
+     version: "2.0.2"
++  package_info_plus:
++    dependency: "direct main"
++    description:
++      name: package_info_plus
++      sha256: "7a6114becdf042be2b0777d77ace954d4a205644171a1cbd8712976b9bbb837c"
++      url: "https://pub.dev"
++    source: hosted
++    version: "1.4.2"
++  package_info_plus_linux:
++    dependency: transitive
++    description:
++      name: package_info_plus_linux
++      sha256: "04b575f44233d30edbb80a94e57cad9107aada334fc02aabb42b6becd13c43fc"
++      url: "https://pub.dev"
++    source: hosted
++    version: "1.0.5"
++  package_info_plus_macos:
++    dependency: transitive
++    description:
++      name: package_info_plus_macos
++      sha256: a2ad8b4acf4cd479d4a0afa5a74ea3f5b1c7563b77e52cc32b3ee6956d5482a6
++      url: "https://pub.dev"
++    source: hosted
++    version: "1.3.0"
++  package_info_plus_platform_interface:
++    dependency: transitive
++    description:
++      name: package_info_plus_platform_interface
++      sha256: f7a0c8f1e7e981bc65f8b64137a53fd3c195b18d429fba960babc59a5a1c7ae8
++      url: "https://pub.dev"
++    source: hosted
++    version: "1.0.2"
++  package_info_plus_web:
++    dependency: transitive
++    description:
++      name: package_info_plus_web
++      sha256: f0829327eb534789e0a16ccac8936a80beed4e2401c4d3a74f3f39094a822d3b
++      url: "https://pub.dev"
++    source: hosted
++    version: "1.0.6"
++  package_info_plus_windows:
++    dependency: transitive
++    description:
++      name: package_info_plus_windows
++      sha256: a6040b8695c82f8dd3c3d4dfab7ef96fbe9c67aac21b9bcf5db272589ef84441
++      url: "https://pub.dev"
++    source: hosted
++    version: "1.0.5"
+   path:
+     dependency: transitive
+     description:
+       name: path
+-      url: "https://pub.dartlang.org"
++      sha256: "087ce49c3f0dc39180befefc60fdb4acd8f8620e5682fe2476afd0b3688bb4af"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "1.8.0"
++    version: "1.9.0"
+   path_parsing:
+     dependency: transitive
+     description:
+       name: path_parsing
+-      url: "https://pub.dartlang.org"
++      sha256: "883402936929eac138ee0a45da5b0f2c80f89913e6dc3bf77eb65b84b409c6ca"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "1.0.0"
++    version: "1.1.0"
+   path_provider:
+     dependency: transitive
+     description:
+       name: path_provider
+-      url: "https://pub.dartlang.org"
++      sha256: db1cf6c3f906f50d52c18400be575f75ed620f8717f9b6d11263edd95080dfc6
++      url: "https://pub.dev"
+     source: hosted
+     version: "2.0.8"
+   path_provider_android:
+     dependency: transitive
+     description:
+       name: path_provider_android
+-      url: "https://pub.dartlang.org"
++      sha256: c69109bae02c6116bd8ac81319b13eb73dfae02ef74690d2a1a98c1ddd3aaefc
++      url: "https://pub.dev"
+     source: hosted
+     version: "2.0.11"
+   path_provider_ios:
+     dependency: transitive
+     description:
+       name: path_provider_ios
+-      url: "https://pub.dartlang.org"
++      sha256: "038d0141ff5d08c60ed071eee2758b68c50c42a1c10066a1fb6c28ab32fac84c"
++      url: "https://pub.dev"
+     source: hosted
+     version: "2.0.7"
+   path_provider_linux:
+     dependency: transitive
+     description:
+       name: path_provider_linux
+-      url: "https://pub.dartlang.org"
++      sha256: "1e109f4df28bd95eab71e323008b53d19c4d633bc1ab05b577518773474e9621"
++      url: "https://pub.dev"
+     source: hosted
+     version: "2.1.5"
+   path_provider_macos:
+     dependency: transitive
+     description:
+       name: path_provider_macos
+-      url: "https://pub.dartlang.org"
++      sha256: "0adeb313e1f2c3fc52baeeee59b0fe9c2d1f7da56fd96a9234e1702ec653a453"
++      url: "https://pub.dev"
+     source: hosted
+     version: "2.0.5"
+   path_provider_platform_interface:
+     dependency: transitive
+     description:
+       name: path_provider_platform_interface
+-      url: "https://pub.dartlang.org"
++      sha256: "3dc0d51b07f85fec3746d9f4e8d31c73bb173cafa2e763f03f8df2e8d1878882"
++      url: "https://pub.dev"
+     source: hosted
+     version: "2.0.3"
+   path_provider_windows:
+     dependency: transitive
+     description:
+       name: path_provider_windows
+-      url: "https://pub.dartlang.org"
++      sha256: "366ad4e3541ea707f859e7148d4d5aba67d589d7936cee04a05c464a277eeb27"
++      url: "https://pub.dev"
+     source: hosted
+     version: "2.0.5"
+-  pdf:
++  pdfx:
+     dependency: "direct main"
+     description:
+-      name: pdf
+-      url: "https://pub.dartlang.org"
++      name: pdfx
++      sha256: "29db9b71d46bf2335e001f91693f2c3fbbf0760e4c2eb596bf4bafab211471c1"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "3.6.5"
+-  pedantic:
++    version: "2.9.2"
++  petitparser:
+     dependency: transitive
+     description:
+-      name: pedantic
+-      url: "https://pub.dartlang.org"
++      name: petitparser
++      sha256: c15605cd28af66339f8eb6fbe0e541bfe2d1b72d5825efc6598f3e0a31b9ad27
++      url: "https://pub.dev"
+     source: hosted
+-    version: "1.11.1"
+-  petitparser:
++    version: "6.0.2"
++  photo_view:
+     dependency: transitive
+     description:
+-      name: petitparser
+-      url: "https://pub.dartlang.org"
++      name: photo_view
++      sha256: "1fc3d970a91295fbd1364296575f854c9863f225505c28c46e0a03e48960c75e"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "4.4.0"
++    version: "0.15.0"
+   platform:
+     dependency: transitive
+     description:
+       name: platform
+-      url: "https://pub.dartlang.org"
++      sha256: "4a451831508d7d6ca779f7ac6e212b4023dd5a7d08a27a63da33756410e32b76"
++      url: "https://pub.dev"
+     source: hosted
+     version: "3.1.0"
+   plugin_platform_interface:
+     dependency: transitive
+     description:
+       name: plugin_platform_interface
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "2.1.2"
+-  pool:
+-    dependency: transitive
+-    description:
+-      name: pool
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "1.5.0"
+-  printing:
+-    dependency: "direct main"
+-    description:
+-      name: printing
+-      url: "https://pub.dartlang.org"
++      sha256: "4820fbfdb9478b1ebae27888254d445073732dae3d6ea81f0b7e06d5dedc3f02"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "5.6.6"
++    version: "2.1.8"
+   process:
+     dependency: transitive
+     description:
+       name: process
+-      url: "https://pub.dartlang.org"
++      sha256: "53fd8db9cec1d37b0574e12f07520d582019cb6c44abf5479a01505099a34a09"
++      url: "https://pub.dev"
+     source: hosted
+     version: "4.2.4"
+-  pub_semver:
+-    dependency: transitive
+-    description:
+-      name: pub_semver
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "2.1.0"
+-  qr:
++  provider:
+     dependency: transitive
+     description:
+-      name: qr
+-      url: "https://pub.dartlang.org"
++      name: provider
++      sha256: "4e82183fa20e5ca25703ead7e05de9e4cceed1fbd1eadc1ac3cb6f565a09f272"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "3.0.0"
++    version: "6.1.5+1"
+   receive_sharing_intent:
+     dependency: "direct main"
+     description:
+       name: receive_sharing_intent
+-      url: "https://pub.dartlang.org"
++      sha256: "912bebb551bce75a14098891fd750305b30d53eba0d61cc70cd9973be9866e8d"
++      url: "https://pub.dev"
+     source: hosted
+     version: "1.4.5"
+   share:
+     dependency: transitive
+     description:
+       name: share
+-      url: "https://pub.dartlang.org"
++      sha256: "97e6403f564ed1051a01534c2fc919cb6e40ea55e60a18ec23cee6e0ce19f4be"
++      url: "https://pub.dev"
+     source: hosted
+     version: "2.0.4"
+   shared_preferences:
+     dependency: "direct main"
+     description:
+       name: shared_preferences
+-      url: "https://pub.dartlang.org"
++      sha256: "6e8bf70b7fef813df4e9a36f658ac46d107db4b4cfe1048b477d4e453a8159f5"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "2.0.12"
++    version: "2.5.3"
+   shared_preferences_android:
+     dependency: transitive
+     description:
+       name: shared_preferences_android
+-      url: "https://pub.dartlang.org"
++      sha256: "9f9f3d372d4304723e6136663bb291c0b93f5e4c8a4a6314347f481a33bda2b1"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "2.0.10"
+-  shared_preferences_ios:
++    version: "2.4.7"
++  shared_preferences_foundation:
+     dependency: transitive
+     description:
+-      name: shared_preferences_ios
+-      url: "https://pub.dartlang.org"
++      name: shared_preferences_foundation
++      sha256: "6a52cfcdaeac77cad8c97b539ff688ccfc458c007b4db12be584fbe5c0e49e03"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "2.0.9"
++    version: "2.5.4"
+   shared_preferences_linux:
+     dependency: transitive
+     description:
+       name: shared_preferences_linux
+-      url: "https://pub.dartlang.org"
++      sha256: "580abfd40f415611503cae30adf626e6656dfb2f0cee8f465ece7b6defb40f2f"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "2.0.4"
+-  shared_preferences_macos:
+-    dependency: transitive
+-    description:
+-      name: shared_preferences_macos
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "2.0.2"
++    version: "2.4.1"
+   shared_preferences_platform_interface:
+     dependency: transitive
+     description:
+       name: shared_preferences_platform_interface
+-      url: "https://pub.dartlang.org"
++      sha256: "57cbf196c486bc2cf1f02b85784932c6094376284b3ad5779d1b1c6c6a816b80"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "2.0.0"
++    version: "2.4.1"
+   shared_preferences_web:
+     dependency: transitive
+     description:
+       name: shared_preferences_web
+-      url: "https://pub.dartlang.org"
++      sha256: c49bd060261c9a3f0ff445892695d6212ff603ef3115edbb448509d407600019
++      url: "https://pub.dev"
+     source: hosted
+-    version: "2.0.3"
++    version: "2.4.3"
+   shared_preferences_windows:
+     dependency: transitive
+     description:
+       name: shared_preferences_windows
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "2.0.4"
+-  shelf:
+-    dependency: transitive
+-    description:
+-      name: shelf
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "1.2.0"
+-  shelf_packages_handler:
+-    dependency: transitive
+-    description:
+-      name: shelf_packages_handler
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "3.0.0"
+-  shelf_proxy:
+-    dependency: transitive
+-    description:
+-      name: shelf_proxy
+-      url: "https://pub.dartlang.org"
++      sha256: "94ef0f72b2d71bc3e700e025db3710911bd51a71cefb65cc609dd0d9a982e3c1"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "1.0.1"
+-  shelf_static:
+-    dependency: transitive
+-    description:
+-      name: shelf_static
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "1.1.0"
+-  shelf_web_socket:
+-    dependency: transitive
+-    description:
+-      name: shelf_web_socket
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "1.0.1"
++    version: "2.4.1"
+   sky_engine:
+     dependency: transitive
+     description: flutter
+     source: sdk
+     version: "0.0.99"
+-  source_maps:
+-    dependency: transitive
+-    description:
+-      name: source_maps
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "0.10.10"
+   source_span:
+     dependency: transitive
+     description:
+       name: source_span
+-      url: "https://pub.dartlang.org"
++      sha256: "53e943d4206a5e30df338fd4c6e7a077e02254531b138a15aec3bd143c1a8b3c"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "1.8.1"
+-  sse:
+-    dependency: transitive
+-    description:
+-      name: sse
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "4.1.0"
++    version: "1.10.0"
+   stack_trace:
+     dependency: transitive
+     description:
+       name: stack_trace
+-      url: "https://pub.dartlang.org"
++      sha256: "73713990125a6d93122541237550ee3352a2d84baad52d375a4cad2eb9b7ce0b"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "1.10.0"
++    version: "1.11.1"
+   stream_channel:
+     dependency: transitive
+     description:
+       name: stream_channel
+-      url: "https://pub.dartlang.org"
++      sha256: ba2aa5d8cc609d96bbb2899c28934f9e1af5cddbd60a827822ea467161eb54e7
++      url: "https://pub.dev"
+     source: hosted
+-    version: "2.1.0"
++    version: "2.1.2"
+   string_scanner:
+     dependency: transitive
+     description:
+       name: string_scanner
+-      url: "https://pub.dartlang.org"
++      sha256: "556692adab6cfa87322a115640c11f13cb77b3f076ddcc5d6ae3c20242bedcde"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "1.1.0"
++    version: "1.2.0"
++  synchronized:
++    dependency: transitive
++    description:
++      name: synchronized
++      sha256: "69fe30f3a8b04a0be0c15ae6490fc859a78ef4c43ae2dd5e8a623d45bfcf9225"
++      url: "https://pub.dev"
++    source: hosted
++    version: "3.3.0+3"
+   term_glyph:
+     dependency: transitive
+     description:
+       name: term_glyph
+-      url: "https://pub.dartlang.org"
++      sha256: a29248a84fbb7c79282b40b8c72a1209db169a2e0542bce341da992fe1bc7e84
++      url: "https://pub.dev"
+     source: hosted
+-    version: "1.2.0"
++    version: "1.2.1"
+   test_api:
+     dependency: transitive
+     description:
+       name: test_api
+-      url: "https://pub.dartlang.org"
++      sha256: "5b8a98dafc4d5c4c9c72d8b31ab2b23fc13422348d2997120294d3bac86b4ddb"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "0.4.3"
++    version: "0.7.2"
+   transparent_image:
+     dependency: "direct main"
+     description:
+       name: transparent_image
+-      url: "https://pub.dartlang.org"
++      sha256: e566a616922a781489f4d91cc939b1b3203b6e4a093317805f2f82f0bb0f8dec
++      url: "https://pub.dev"
+     source: hosted
+     version: "2.0.0"
++  tuple:
++    dependency: transitive
++    description:
++      name: tuple
++      sha256: a97ce2013f240b2f3807bcbaf218765b6f301c3eff91092bcfa23a039e7dd151
++      url: "https://pub.dev"
++    source: hosted
++    version: "2.0.2"
+   typed_data:
+     dependency: transitive
+     description:
+       name: typed_data
+-      url: "https://pub.dartlang.org"
++      sha256: "53bdf7e979cfbf3e28987552fd72f637e63f3c8724c9e56d9246942dc2fa36ee"
++      url: "https://pub.dev"
+     source: hosted
+     version: "1.3.0"
++  universal_platform:
++    dependency: transitive
++    description:
++      name: universal_platform
++      sha256: "64e16458a0ea9b99260ceb5467a214c1f298d647c659af1bff6d3bf82536b1ec"
++      url: "https://pub.dev"
++    source: hosted
++    version: "1.1.0"
+   url_launcher:
+     dependency: "direct main"
+     description:
+       name: url_launcher
+-      url: "https://pub.dartlang.org"
++      sha256: "9d06212b1362abc2f0f0d78e6f09f726608c74e3b9462e8368bb03314aa8d603"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "6.0.18"
++    version: "6.3.1"
+   url_launcher_android:
+     dependency: transitive
+     description:
+       name: url_launcher_android
+-      url: "https://pub.dartlang.org"
++      sha256: "6fc2f56536ee873eeb867ad176ae15f304ccccc357848b351f6f0d8d4a40d193"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "6.0.14"
++    version: "6.3.14"
+   url_launcher_ios:
+     dependency: transitive
+     description:
+       name: url_launcher_ios
+-      url: "https://pub.dartlang.org"
++      sha256: "7f2022359d4c099eea7df3fdf739f7d3d3b9faf3166fb1dd390775176e0b76cb"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "6.0.14"
++    version: "6.3.3"
+   url_launcher_linux:
+     dependency: transitive
+     description:
+       name: url_launcher_linux
+-      url: "https://pub.dartlang.org"
++      sha256: "4e9ba368772369e3e08f231d2301b4ef72b9ff87c31192ef471b380ef29a4935"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "2.0.3"
++    version: "3.2.1"
+   url_launcher_macos:
+     dependency: transitive
+     description:
+       name: url_launcher_macos
+-      url: "https://pub.dartlang.org"
++      sha256: "17ba2000b847f334f16626a574c702b196723af2a289e7a93ffcb79acff855c2"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "2.0.3"
++    version: "3.2.2"
+   url_launcher_platform_interface:
+     dependency: transitive
+     description:
+       name: url_launcher_platform_interface
+-      url: "https://pub.dartlang.org"
++      sha256: "552f8a1e663569be95a8190206a38187b531910283c3e982193e4f2733f01029"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "2.0.5"
++    version: "2.3.2"
+   url_launcher_web:
+     dependency: transitive
+     description:
+       name: url_launcher_web
+-      url: "https://pub.dartlang.org"
++      sha256: "772638d3b34c779ede05ba3d38af34657a05ac55b06279ea6edd409e323dca8e"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "2.0.6"
++    version: "2.3.3"
+   url_launcher_windows:
+     dependency: transitive
+     description:
+       name: url_launcher_windows
+-      url: "https://pub.dartlang.org"
++      sha256: "3284b6d2ac454cf34f114e1d3319866fdd1e19cdc329999057e44ffe936cfa77"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "2.0.2"
+-  usage:
++    version: "3.1.4"
++  uuid:
+     dependency: transitive
+     description:
+-      name: usage
+-      url: "https://pub.dartlang.org"
++      name: uuid
++      sha256: "1fef9e8e11e2991bb773070d4656b7bd5d850967a2456cfc83cf47925ba79489"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "4.0.2"
+-  uuid:
++    version: "4.5.3"
++  vector_graphics:
+     dependency: transitive
+     description:
+-      name: uuid
+-      url: "https://pub.dartlang.org"
++      name: vector_graphics
++      sha256: "4ac59808bbfca6da38c99f415ff2d3a5d7ca0a6b4809c71d9cf30fba5daf9752"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "3.0.5"
++    version: "1.1.10+1"
++  vector_graphics_codec:
++    dependency: transitive
++    description:
++      name: vector_graphics_codec
++      sha256: f3247e7ab0ec77dc759263e68394990edc608fb2b480b80db8aa86ed09279e33
++      url: "https://pub.dev"
++    source: hosted
++    version: "1.1.10+1"
++  vector_graphics_compiler:
++    dependency: transitive
++    description:
++      name: vector_graphics_compiler
++      sha256: "18489bdd8850de3dd7ca8a34e0c446f719ec63e2bab2e7a8cc66a9028dd76c5a"
++      url: "https://pub.dev"
++    source: hosted
++    version: "1.1.10+1"
+   vector_math:
+     dependency: "direct main"
+     description:
+       name: vector_math
+-      url: "https://pub.dartlang.org"
++      sha256: "80b3257d1492ce4d091729e3a67a60407d227c27241d6927be0130c98e741803"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "2.1.1"
++    version: "2.1.4"
+   vm_service:
+     dependency: transitive
+     description:
+       name: vm_service
+-      url: "https://pub.dartlang.org"
+-    source: hosted
+-    version: "7.5.0"
+-  web_socket_channel:
+-    dependency: transitive
+-    description:
+-      name: web_socket_channel
+-      url: "https://pub.dartlang.org"
++      sha256: f652077d0bdf60abe4c1f6377448e8655008eef28f128bc023f7b5e8dfeb48fc
++      url: "https://pub.dev"
+     source: hosted
+-    version: "2.1.0"
+-  webkit_inspection_protocol:
++    version: "14.2.4"
++  web:
+     dependency: transitive
+     description:
+-      name: webkit_inspection_protocol
+-      url: "https://pub.dartlang.org"
++      name: web
++      sha256: "868d88a33d8a87b18ffc05f9f030ba328ffefba92d6c127917a2ba740f9cfe4a"
++      url: "https://pub.dev"
+     source: hosted
+-    version: "1.0.0"
++    version: "1.1.1"
+   win32:
+     dependency: transitive
+     description:
+       name: win32
+-      url: "https://pub.dartlang.org"
++      sha256: "9c74034bdda8a2cdc3627d29a8738332419ca042409071ae7fba4d501fa54cb6"
++      url: "https://pub.dev"
+     source: hosted
+     version: "2.3.8"
+   xdg_directories:
+     dependency: transitive
+     description:
+       name: xdg_directories
+-      url: "https://pub.dartlang.org"
++      sha256: "0186b3f2d66be9a12b0295bddcf8b6f8c0b0cc2f85c6287344e2a6366bc28457"
++      url: "https://pub.dev"
+     source: hosted
+     version: "0.2.0"
+   xml:
+     dependency: "direct main"
+     description:
+       name: xml
+-      url: "https://pub.dartlang.org"
++      sha256: b015a8ad1c488f66851d762d3090a21c600e479dc75e68328c52774040cf9226
++      url: "https://pub.dev"
+     source: hosted
+-    version: "5.3.1"
++    version: "6.5.0"
+   yaml:
+     dependency: transitive
+     description:
+       name: yaml
+-      url: "https://pub.dartlang.org"
++      sha256: b9da305ac7c39faa3f030eccd175340f968459dae4af175130b3fc47e40d76ce
++      url: "https://pub.dev"
+     source: hosted
+-    version: "3.1.0"
++    version: "3.1.3"
+ sdks:
+-  dart: ">=2.15.0 <3.0.0"
+-  flutter: ">=2.5.0"
++  dart: ">=3.5.0 <4.0.0"
++  flutter: ">=3.27.0"
+diff --git a/pubspec.yaml b/pubspec.yaml
+index 2c68f49..435a242 100644
+--- a/pubspec.yaml
++++ b/pubspec.yaml
+@@ -6,43 +6,35 @@ publish_to: none
+ version: 1.1.11+27
+ 
+ environment:
+-  sdk: '>=2.12.0 <3.0.0'
++  sdk: '>=3.0.0 <4.0.0'
+ 
+ dependencies:
+   flutter:
+     sdk: flutter
+   file_picker_cross: ^4.5.0
+-  katex_flutter: ^4.0.2+26
+-  intl: ^0.17.0
+-  archive: ^3.1.11
+-  xml: ^5.3.1
+-  url_launcher: ^6.0.18
++  intl: ^0.19.0
++  archive: ^3.6.1
++  xml: ^6.5.0
++  url_launcher: ^6.3.0
+   transparent_image: ^2.0.0
+-#  catcher: ^0.4.0
+   receive_sharing_intent: ^1.4.5
+-  after_layout: ^1.1.0
+-  flutter_dropzone: ^3.0.5
+-  shared_preferences: ^2.0.12
+-  flutter_absolute_path: 1.0.6
+-  matrix_gesture_detector: ^0.2.0-nullsafety.1
++  after_layout: ^1.2.0
++  shared_preferences: ^2.3.3
+   vector_math: ^2.1.1
+-  dwds: ^11.5.1
+-  flutter_colorpicker: ^1.0.3
+-  package_info: ^2.0.2
+-  printing: ^5.6.6
+-  pdf: ^3.6.5
+-#  zefyr: ^0.12.0
+-#  notus: ^0.1.5
++  flutter_colorpicker: ^1.1.0
++  package_info_plus: ^1.4.2
+ 
+   flutter_localizations:
+     sdk: flutter
+-  font_awesome_flutter: ^9.2.0
++  font_awesome_flutter: ^10.8.0
++  flutter_math_fork: ^0.7.4
++  pdfx: ^2.9.2
+ 
+ dev_dependencies:
+   flutter_test:
+     sdk:
+       flutter
+-  flutter_launcher_icons: ^0.9.2
++  flutter_launcher_icons: ^0.14.3
+ 
+ flutter_icons:
+    android: true
+diff --git a/windows/flutter/generated_plugin_registrant.cc b/windows/flutter/generated_plugin_registrant.cc
+index d90864d..5140fba 100644
+--- a/windows/flutter/generated_plugin_registrant.cc
++++ b/windows/flutter/generated_plugin_registrant.cc
+@@ -2,17 +2,19 @@
+ //  Generated file. Do not edit.
+ //
+ 
++// clang-format off
++
+ #include "generated_plugin_registrant.h"
+ 
+ #include <file_selector_windows/file_selector_plugin.h>
+-#include <printing/printing_plugin.h>
+-#include <url_launcher_windows/url_launcher_plugin.h>
++#include <pdfx/pdfx_plugin.h>
++#include <url_launcher_windows/url_launcher_windows.h>
+ 
+ void RegisterPlugins(flutter::PluginRegistry* registry) {
+   FileSelectorPluginRegisterWithRegistrar(
+       registry->GetRegistrarForPlugin("FileSelectorPlugin"));
+-  PrintingPluginRegisterWithRegistrar(
+-      registry->GetRegistrarForPlugin("PrintingPlugin"));
+-  UrlLauncherPluginRegisterWithRegistrar(
+-      registry->GetRegistrarForPlugin("UrlLauncherPlugin"));
++  PdfxPluginRegisterWithRegistrar(
++      registry->GetRegistrarForPlugin("PdfxPlugin"));
++  UrlLauncherWindowsRegisterWithRegistrar(
++      registry->GetRegistrarForPlugin("UrlLauncherWindows"));
+ }
+diff --git a/windows/flutter/generated_plugin_registrant.h b/windows/flutter/generated_plugin_registrant.h
+index 9846246..dc139d8 100644
+--- a/windows/flutter/generated_plugin_registrant.h
++++ b/windows/flutter/generated_plugin_registrant.h
+@@ -2,6 +2,8 @@
+ //  Generated file. Do not edit.
+ //
+ 
++// clang-format off
++
+ #ifndef GENERATED_PLUGIN_REGISTRANT_
+ #define GENERATED_PLUGIN_REGISTRANT_
+ 
+diff --git a/windows/flutter/generated_plugins.cmake b/windows/flutter/generated_plugins.cmake
+index adc95cc..9149fc8 100644
+--- a/windows/flutter/generated_plugins.cmake
++++ b/windows/flutter/generated_plugins.cmake
+@@ -4,10 +4,13 @@
+ 
+ list(APPEND FLUTTER_PLUGIN_LIST
+   file_selector_windows
+-  printing
++  pdfx
+   url_launcher_windows
+ )
+ 
++list(APPEND FLUTTER_FFI_PLUGIN_LIST
++)
++
+ set(PLUGIN_BUNDLED_LIBRARIES)
+ 
+ foreach(plugin ${FLUTTER_PLUGIN_LIST})
+@@ -16,3 +19,8 @@ foreach(plugin ${FLUTTER_PLUGIN_LIST})
+   list(APPEND PLUGIN_BUNDLED_LIBRARIES $<TARGET_FILE:${plugin}_plugin>)
+   list(APPEND PLUGIN_BUNDLED_LIBRARIES ${${plugin}_bundled_libraries})
+ endforeach(plugin)
++
++foreach(ffi_plugin ${FLUTTER_FFI_PLUGIN_LIST})
++  add_subdirectory(flutter/ephemeral/.plugin_symlinks/${ffi_plugin}/windows plugins/${ffi_plugin})
++  list(APPEND PLUGIN_BUNDLED_LIBRARIES ${${ffi_plugin}_bundled_libraries})
++endforeach(ffi_plugin)
+
+--- a/.pub-cache/hosted/pub.dev/file_picker-4.3.3/android/src/main/java/com/mr/flutter/plugin/filepicker/FilePickerDelegate.java
++++ b/.pub-cache/hosted/pub.dev/file_picker-4.3.3/android/src/main/java/com/mr/flutter/plugin/filepicker/FilePickerDelegate.java
+@@ -264,8 +264,12 @@ public class FilePickerDelegate implements MethodChannel.MethodCallHandler,
+        this.type = type;
+        this.isMultipleSelection = isMultipleSelection;
+        this.loadDataToMemory = withData;
+        this.allowedExtensions = allowedExtensions;
+ 
+-       if (!this.permissionManager.isPermissionGranted(Manifest.permission.READ_EXTERNAL_STORAGE)) {
+-           this.permissionManager.askForPermission(Manifest.permission.READ_EXTERNAL_STORAGE, REQUEST_CODE);
+-           return;
++       // On Android 13+ (API 33) READ_EXTERNAL_STORAGE was deprecated; ACTION_GET_CONTENT
++       // does not need it — skip the permission gate entirely on those devices.
++       if (Build.VERSION.SDK_INT < 33) {
++           if (!this.permissionManager.isPermissionGranted(Manifest.permission.READ_EXTERNAL_STORAGE)) {
++               this.permissionManager.askForPermission(Manifest.permission.READ_EXTERNAL_STORAGE, REQUEST_CODE);
++               return;
++           }
+        }
+ 
+        this.startFileExplorer();
+
+--- a/.pub-cache/hosted/pub.dev/file_picker-4.3.3/android/src/main/java/com/mr/flutter/plugin/filepicker/FileUtils.java
++++ b/.pub-cache/hosted/pub.dev/file_picker-4.3.3/android/src/main/java/com/mr/flutter/plugin/filepicker/FileUtils.java
+@@ -44,9 +44,10 @@ public class FileUtils {
+        for (int i = 0; i < allowedExtensions.size(); i++) {
+-           final String mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(allowedExtensions.get(i));
++           String mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(allowedExtensions.get(i));
+            if (mime == null) {
+-               Log.w(TAG, "Custom file type " + allowedExtensions.get(i) + " is unsupported and will be ignored.");
+-               continue;
++               Log.w(TAG, "Custom file type " + allowedExtensions.get(i) + " has no registered MIME, falling back to application/octet-stream.");
++               mime = "application/octet-stream";
+            }
+            mimes.add(mime);
+        }

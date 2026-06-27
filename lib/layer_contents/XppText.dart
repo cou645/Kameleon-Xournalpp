@@ -26,8 +26,53 @@ class XppText extends XppContent {
   @override
   XppPageContentWidget render() {
     return XppPageContentWidget(
-      child: RichTextField(),
+      child: Text(
+        text ?? '',
+        style: TextStyle(
+          color: color ?? Colors.black,
+          fontSize: size ?? 16,
+          fontFamily: fontFamily,
+        ),
+      ),
       tool: EditingTool.TEXT,
+    );
+  }
+
+  static Future<XppText?> edit({
+    required BuildContext context,
+    required Offset topLeft,
+    required Color? color,
+    required double? size,
+    String? initialText,
+  }) async {
+    final ctrl = TextEditingController(text: initialText);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add text'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          maxLines: null,
+          decoration: const InputDecoration(hintText: 'Enter text…'),
+          onSubmitted: (v) => Navigator.pop(ctx, v),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, null),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, ctrl.text),
+              child: const Text('OK')),
+        ],
+      ),
+    );
+    if (result == null || result.isEmpty) return null;
+    return XppText(
+      offset: topLeft,
+      color: color,
+      size: size,
+      text: result,
     );
   }
 

@@ -14,8 +14,8 @@ import 'package:xournalpp/layer_contents/XppTexImage.dart';
 import 'package:xournalpp/layer_contents/XppText.dart';
 import 'package:xournalpp/pages/CanvasPage.dart';
 import 'package:xournalpp/pages/OpenPage.dart';
+import 'package:pdfx/pdfx.dart';
 import 'package:xournalpp/src/HexColor.dart';
-import 'package:xournalpp/src/PdfImage.dart';
 import 'package:xournalpp/src/XppBackground.dart';
 
 import 'XppLayer.dart';
@@ -33,20 +33,22 @@ class XppFile {
 
   /// creates an [XppFile] from a PDF document opened in a [FilePickerCross]
   static Future<XppFile> importPdf({required FilePickerCross pdf}) async {
-    final pageCount = await pdfPageCount(pdf);
     pdf.saveToPath(path: pdf.path!);
+    final doc = await PdfDocument.openFile(pdf.path!);
+    final pageCount = doc.pagesCount;
     XppFile file = XppFile.empty(title: pdf.fileName)..pages!.clear();
-    for (int i = 0; i < pageCount; i++) {
-      final size = await pdfPageSize(pdf, i);
+    for (int i = 1; i <= pageCount; i++) {
+      final page = await doc.getPage(i);
+      final size = XppPageSize(width: page.width, height: page.height);
+      await page.close();
       file.pages!.add(XppPage.empty()
         ..pageSize = size
         ..background = XppBackgroundPdf(
-            onUnavailable: ((String p) =>
-                    throw ("$p is not available even though just imported"))
-                as Future<FilePickerCross> Function(String?),
+            onUnavailable: (_) async => throw ('PDF not available'),
             page: i,
             filename: pdf.path));
     }
+    await doc.close();
     return file;
   }
 

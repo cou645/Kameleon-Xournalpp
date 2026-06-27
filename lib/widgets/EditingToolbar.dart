@@ -13,6 +13,7 @@ class EditingToolBar extends StatefulWidget {
   final Function(Color)? onColorChange;
   final Function()? getColor;
   final Function()? getWidth;
+  final VoidCallback? onImageTapped;
 
   const EditingToolBar(
       {Key? key,
@@ -21,7 +22,8 @@ class EditingToolBar extends StatefulWidget {
       this.onWidthChange,
       this.onColorChange,
       this.getColor,
-      this.getWidth})
+      this.getWidth,
+      this.onImageTapped})
       : super(key: key);
 
   @override
@@ -53,7 +55,7 @@ class EditingToolBarState extends State<EditingToolBar> {
             getInkwellButton(EditingTool.LATEX, Icons.science, usePrimaryColor: true),
             getInkwellButton(EditingTool.ERASER, FontAwesomeIcons.eraser, enableSettings: true, usePrimaryColor: true),
             getInkwellButton(EditingTool.WHITEOUT, Icons.format_paint, usePrimaryColor: true),
-            getInkwellButton(EditingTool.IMAGE, Icons.add_photo_alternate, usePrimaryColor: true),
+            getInkwellButton(EditingTool.IMAGE, Icons.add_photo_alternate, usePrimaryColor: true, onTapExtra: widget.onImageTapped),
             getInkwellButton(EditingTool.SELECT, Icons.tab_unselected, usePrimaryColor: true),
           ],
           shrinkWrap: true,
@@ -76,24 +78,25 @@ class EditingToolBarState extends State<EditingToolBar> {
     );
   }
 
-  InkWell getInkwellButton(EditingTool tool, IconData icon, {bool enableSettings = false, bool usePrimaryColor = false}) {
+  InkWell getInkwellButton(EditingTool tool, IconData icon, {bool enableSettings = false, bool usePrimaryColor = false, VoidCallback? onTapExtra}) {
     return InkWell(
       onLongPress: () {},
       child: FloatingActionButton(
         heroTag: tool,
         onPressed: () {
-          // if tool is selected, then show the settings
           if(enableSettings && getTool() == tool){
             showCustomDialog(context);
           } else {
             setState(() => setTool(tool));
             saveDeviceTable();
+            onTapExtra?.call();
           }
         },
         child: FaIcon(icon),
         elevation: 6,
+        foregroundColor: Colors.white,
         backgroundColor:
-        getTool() == tool ? (!usePrimaryColor ? widget.getColor!() : null) : Theme.of(context).cardColor,
+        getTool() == tool ? (!usePrimaryColor ? widget.getColor!() : Theme.of(context).colorScheme.primary) : Theme.of(context).colorScheme.surfaceContainerHighest,
       ),
     );
   }
@@ -107,7 +110,7 @@ class EditingToolBarState extends State<EditingToolBar> {
   void setTool(EditingTool tool){
     PointerDeviceKind? device = currentDevice;
     if (Platform.isAndroid || Platform.isIOS) {
-      device = PointerDeviceKind.stylus;
+      device = PointerDeviceKind.touch;
     }
     widget.deviceMap![device] = tool;
   }
@@ -115,7 +118,7 @@ class EditingToolBarState extends State<EditingToolBar> {
   EditingTool? getTool() {
     PointerDeviceKind? device = currentDevice;
     if (Platform.isAndroid || Platform.isIOS) {
-      device = PointerDeviceKind.stylus;
+      device = PointerDeviceKind.touch;
     }
     return widget.deviceMap![device];
   }

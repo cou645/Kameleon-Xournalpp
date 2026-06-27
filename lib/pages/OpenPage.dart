@@ -205,7 +205,7 @@ class _OpenPageState extends State<OpenPage>
           ListTile(
             title: Text(
               S.of(context).recentFiles,
-              style: Theme.of(context).textTheme.headline3,
+              style: Theme.of(context).textTheme.displaySmall,
             ),
           )
         ]..addAll(_loadedRecent
@@ -340,8 +340,8 @@ class _OpenPageState extends State<OpenPage>
           ),
           subtitle: Text(
             fileInfo['name'],
-            style: Theme.of(context).textTheme.headline3!.copyWith(
-                color: Theme.of(context).textTheme.bodyText1!.color,
+            style: Theme.of(context).textTheme.displaySmall!.copyWith(
+                color: Theme.of(context).textTheme.bodyLarge!.color,
                 fontSize: kEmphasisFontSize * kFontSizeDivision),
           ),
           trailing: Tooltip(

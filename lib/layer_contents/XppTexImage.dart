@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:katex_flutter/katex_flutter.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:xml/xml.dart';
 import 'package:xournalpp/layer_contents/XppText.dart';
 import 'package:xournalpp/src/HexColor.dart';
@@ -53,14 +53,16 @@ class XppTexImage extends XppContent {
 
   @override
   XppPageContentWidget render() {
-    print(color);
     return XppPageContentWidget(
-      child: DefaultTextStyle(
-        style:
-            TextStyle(color: color, fontSize: 18), // TODO: implement text size
-        child: new KaTeX(laTeXCode: Text('\$\\displaystyle{$text}\$')),
+      child: Math.tex(
+        text ?? '',
+        mathStyle: MathStyle.display,
+        textStyle: TextStyle(color: color, fontSize: 18),
+        onErrorFallback: (err) => Text(
+          text ?? '',
+          style: TextStyle(color: Colors.red, fontSize: 14, fontStyle: FontStyle.italic),
+        ),
       ),
-      onSelected: () => print('Edit LaTeX!'),
       tool: EditingTool.LATEX,
     );
   }

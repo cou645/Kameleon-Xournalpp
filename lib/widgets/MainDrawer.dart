@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:package_info/package_info.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:xournalpp/generated/l10n.dart';
 import 'package:xournalpp/pages/CanvasPage.dart';
@@ -40,10 +40,10 @@ class _MainDrawerState extends State<MainDrawer> {
                   child: UserAccountsDrawerHeader(
                     accountName: Text(
                       'Xournal++',
-                      style: Theme.of(context).textTheme.headline1,
+                      style: Theme.of(context).textTheme.displayLarge,
                     ),
                     accountEmail: Text(S.of(context).mobileEditionUnofficial,
-                        style: Theme.of(context).textTheme.headline6),
+                        style: Theme.of(context).textTheme.titleLarge),
                     currentAccountPicture: Image.asset('assets/xournalpp.png'),
                   ),
                 ),
@@ -86,7 +86,7 @@ class _MainDrawerState extends State<MainDrawer> {
                               'Version ${info?.version} build ${info?.buildNumber}',
                           applicationIcon:
                               Image.asset('assets/xournalpp.png', scale: 8),
-                          applicationLegalese: 'Powered by TestApp.schule',
+                          applicationLegalese: 'Powered by TestApp.schule\n\nContributors: TheOneWithTheBraid, stemsee',
                           children: [
                             Image.asset('assets/feature-banner.png', scale: 2),
                             if (!(Theme.of(context).platform ==

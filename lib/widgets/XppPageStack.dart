@@ -4,14 +4,16 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:xournalpp/layer_contents/XppText.dart';
 import 'package:xournalpp/src/XppBackground.dart';
 import 'package:xournalpp/src/XppLayer.dart';
 import 'package:xournalpp/src/XppPage.dart';
 
 class XppPageStack extends StatefulWidget {
   final XppPage? page;
+  final Function(XppContent)? onEditContent;
 
-  const XppPageStack({Key? key, this.page}) : super(key: key);
+  const XppPageStack({Key? key, this.page, this.onEditContent}) : super(key: key);
 
   @override
   XppPageStackState createState() => XppPageStackState();
@@ -44,6 +46,7 @@ class XppPageStackState extends State<XppPageStack>
 
     children.addAll(page!.layers!.map((e) => XppLayerStack(
           layer: e,
+          onEditContent: widget.onEditContent,
         )));
     return RepaintBoundary(
         key: pngKey,
@@ -79,8 +82,9 @@ class XppPageStackState extends State<XppPageStack>
 
 class XppLayerStack extends StatefulWidget {
   final XppLayer? layer;
+  final Function(XppContent)? onEditContent;
 
-  const XppLayerStack({Key? key, this.layer}) : super(key: key);
+  const XppLayerStack({Key? key, this.layer, this.onEditContent}) : super(key: key);
   @override
   _XppLayerStackState createState() => _XppLayerStackState();
 }
@@ -89,7 +93,7 @@ class _XppLayerStackState extends State<XppLayerStack> {
   Map<XppContent, Widget> renderedContent = {};
   @override
   Widget build(BuildContext context) {
-    List<Widget?> children = [];
+    List<Widget> children = [];
     widget.layer!.content!.forEach((element) {
       if (element == null) return;
       if (!renderedContent.keys.contains(element)) {
@@ -99,10 +103,18 @@ class _XppLayerStackState extends State<XppLayerStack> {
           left: element.getOffset()?.dx ?? 0,
         );
       }
-      children.add(renderedContent[element]);
+      Widget? w = renderedContent[element];
+      if (w == null) return;
+      if (element is XppText && widget.onEditContent != null) {
+        w = GestureDetector(
+          onDoubleTap: () => widget.onEditContent!(element),
+          child: w,
+        );
+      }
+      children.add(w);
     });
     return Stack(
-      children: children as List<Widget>,
+      children: children,
     );
   }
 }

@@ -1,11 +1,12 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker_cross/file_picker_cross.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:pdfx/pdfx.dart';
 import 'package:xml/xml.dart';
 import 'package:xournalpp/src/HexColor.dart';
-import 'package:xournalpp/src/PdfImage.dart';
 
 import 'XppPage.dart';
 
@@ -20,8 +21,7 @@ abstract class XppBackground {
   XmlElement toXmlElement();
 }
 
-/// page background for a [XppPage] made from an image URI. I am sure it will be hard to implement for web.
-/// TODO: implement background for web
+/// page background for a [XppPage] made from an image URI.
 class XppBackgroundImage extends XppBackground {
   final String? filename;
   final XppBackgroundImageDomain domain;
@@ -34,7 +34,10 @@ class XppBackgroundImage extends XppBackground {
 
   @override
   Widget render() {
-    return (Container());
+    if (filename == null) return Container();
+    final file = File(filename!);
+    if (!file.existsSync()) return Container(color: Colors.white);
+    return Image.file(file, fit: BoxFit.fill);
   }
 
   @override
@@ -101,21 +104,46 @@ class PDfBackgroundWidget extends StatefulWidget {
 
 class _PDfBackgroundWidgetState extends State<PDfBackgroundWidget>
     with AutomaticKeepAliveClientMixin {
+  Future<Uint8List?> _renderPage() async {
+    final filename = widget.provider!.filename;
+    final pageNo = (widget.provider!.page ?? 1);
+
+    PdfDocument? doc;
+    try {
+      if (filename != null && File(filename).existsSync()) {
+        doc = await PdfDocument.openFile(filename);
+      } else {
+        // Ask user to locate the file
+        final picked = await widget.provider!.onUnavailable(filename);
+        doc = await PdfDocument.openData(picked.toUint8List()!);
+      }
+      final page = await doc.getPage(pageNo);
+      final img = await page.render(
+        width: page.width * 2,
+        height: page.height * 2,
+        format: PdfPageImageFormat.jpeg,
+      );
+      await page.close();
+      await doc.close();
+      return img?.bytes;
+    } catch (_) {
+      doc?.close();
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return FutureBuilder(
-        future:
-            FilePickerCross.fromInternalPath(path: widget.provider!.filename!)
-                .then((value) {
-          return pdfImage(value, widget.provider!.page);
-        }).catchError((e) => widget.provider!
-                    .onUnavailable(widget.provider!.filename)
-                    .then((value) => pdfImage(value, widget.provider!.page))),
-        builder: (context, AsyncSnapshot<Uint8List> snapshot) =>
-            (snapshot.hasData)
-                ? Image.memory(snapshot.data!)
-                : Center(child: CircularProgressIndicator()));
+    return FutureBuilder<Uint8List?>(
+        future: _renderPage(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData && snapshot.data != null) {
+            return Image.memory(snapshot.data!, fit: BoxFit.fill);
+          }
+          if (snapshot.hasError) return Container(color: Colors.white);
+          return const Center(child: CircularProgressIndicator());
+        });
   }
 
   @override

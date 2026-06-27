@@ -41,7 +41,7 @@ class _ToolBoxBottomSheetState extends State<ToolBoxBottomSheet> {
                 children: [
                   Text(
                     S.of(context).pageBackground,
-                    style: Theme.of(context).textTheme.headline4,
+                    style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   Container(
                     height: 128,

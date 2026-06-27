@@ -30,7 +30,7 @@ class _QuotaTileState extends State<QuotaTile> {
                   (quota!.relative * 100).round().toString() +
                   '% ' +
                   S.of(context).used,
-              style: Theme.of(context).textTheme.subtitle2,
+              style: Theme.of(context).textTheme.titleSmall,
             )
           : Center(
               child: CircularProgressIndicator(),

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' as io;
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -12,7 +13,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:transparent_image/transparent_image.dart';
 import 'package:vector_math/vector_math_64.dart' show Vector4;
 import 'package:xournalpp/generated/l10n.dart';
+import 'package:xournalpp/layer_contents/XppImage.dart';
+import 'package:xournalpp/layer_contents/XppText.dart';
 import 'package:xournalpp/src/XppFile.dart';
+import 'package:xournalpp/src/XppLayer.dart';
 import 'package:xournalpp/src/XppPage.dart';
 import 'package:xournalpp/src/globals.dart';
 import 'package:xournalpp/widgets/EditingToolbar.dart';
@@ -57,6 +61,10 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
   double pageScale = 1;
 
   bool savingFile = false;
+
+  // Undo/Redo history — each entry is a snapshot of the current page's content list
+  final List<List<XppContent?>> _undoStack = [];
+  final List<List<XppContent?>> _redoStack = [];
 
   Animation<Matrix4>? _animationReset;
   late AnimationController _controllerReset;
@@ -112,11 +120,11 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
                           });
                         },
                         removeLastContent: () {
+                          _pushUndo();
                           _file!.pages![currentPage].layers![0].content!
                               .removeLast();
                         },
                         filterEraser: ({Offset? coordinates, double? radius}) {
-                          // if we would execute the removal instantly, we would destroy the order of the strokes
                           List<Function> removalFunctions = [];
                           _file!.pages![currentPage].layers![0].content!
                               .forEach((stroke) {
@@ -135,6 +143,7 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
                             });
                           });
                           if (removalFunctions.isNotEmpty) {
+                            _pushUndo();
                             removalFunctions.forEach((element) {
                               element();
                             });
@@ -142,7 +151,7 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
                           }
                         },
                         onNewContent: (newContent) {
-                          /// TODO: manage layers
+                          _pushUndo();
                           _file!.pages![currentPage].layers![0].content =
                               new List.from(_file!
                                   .pages![currentPage].layers![0].content!)
@@ -154,9 +163,9 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(4),
                           child: XppPageStack(
-                            /// to communicate from [PointerListener] to [XppPageStack]
                             key: _pageStackKey,
                             page: _file!.pages![currentPage],
+                            onEditContent: _handleEditContent,
                           ),
                         ),
                       ),
@@ -222,6 +231,16 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
               child: Text(widget.file?.title ?? S.of(context).newDocument)),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.undo),
+            tooltip: 'Undo',
+            onPressed: _undoStack.isEmpty ? null : _undo,
+          ),
+          IconButton(
+            icon: const Icon(Icons.redo),
+            tooltip: 'Redo',
+            onPressed: _redoStack.isEmpty ? null : _redo,
+          ),
           savingFile
               ? Center(
                   child: Padding(
@@ -241,11 +260,13 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
             onSelected: (item) async {
               if (item == S.of(context).saveAs) saveFile(export: true);
               if (item == S.of(context).sharePage) shareScreenshot();
+              if (item == 'Send to KP…') sendToKP();
             },
             itemBuilder: (BuildContext context) {
               return {
                 S.of(context).saveAs,
-                if (!kIsWeb) S.of(context).sharePage
+                if (!kIsWeb) S.of(context).sharePage,
+                'Send to KP…',
               }.map((String choice) {
                 return PopupMenuItem<String>(
                   value: choice,
@@ -282,7 +303,8 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
                         _toolData = newDeviceMap!;
                         _setZoomableState();
                       },
-                    ))),
+                    ),
+                onImageTapped: _insertImage)),
       ),
       bottomNavigationBar: BottomAppBar(
         shape: kIsWeb ? null : CircularNotchedRectangle(),
@@ -344,7 +366,7 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
         onPressed: () {
           showModalBottomSheet(
               elevation: 16,
-              backgroundColor: Theme.of(context).backgroundColor,
+              backgroundColor: Theme.of(context).colorScheme.surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(16),
@@ -411,7 +433,7 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
       EditingTool tool;
       switch (kind) {
         case PointerDeviceKind.touch:
-          tool = EditingTool.MOVE;
+          tool = EditingTool.STYLUS;
           break;
         case PointerDeviceKind.invertedStylus:
           tool = EditingTool.ERASER;
@@ -529,6 +551,151 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
         ),
       );
     }*/
+  }
+
+  // ── Edit existing content ───────────────────────────────────────────────────
+
+  void _insertImage() {
+    final pageSize = _file!.pages![currentPage].pageSize!;
+    final topLeft = Offset(pageSize.width! / 4, pageSize.height! / 4);
+    XppImage.open(topLeft: topLeft).then((img) {
+      _pushUndo();
+      _file!.pages![currentPage].layers![0].content =
+          List.from(_file!.pages![currentPage].layers![0].content!)..add(img);
+      _pageStackKey.currentState?.setPageData(_file!.pages![currentPage]);
+      setState(() {});
+    }).catchError((_) {});
+  }
+
+  void _handleEditContent(XppContent content) {
+    if (content is XppText) {
+      XppText.edit(
+        context: context,
+        topLeft: content.offset ?? Offset.zero,
+        color: content.color ?? toolColor,
+        size: content.size ?? toolWidth * 3,
+        initialText: content.text,
+      ).then((replacement) {
+        if (replacement == null) return;
+        _pushUndo();
+        final layer = _file!.pages![currentPage].layers![0];
+        final idx = layer.content!.indexOf(content);
+        if (idx >= 0) {
+          layer.content![idx] = replacement;
+          _pageStackKey.currentState?.setPageData(_file!.pages![currentPage]);
+          setState(() {});
+        }
+      });
+    }
+  }
+
+  // ── Undo / Redo ─────────────────────────────────────────────────────────────
+
+  List<XppContent?> get _currentContent =>
+      _file!.pages![currentPage].layers![0].content!;
+
+  void _pushUndo() {
+    _undoStack.add(List.from(_currentContent));
+    _redoStack.clear();
+  }
+
+  void _applyContent(List<XppContent?> content) {
+    setState(() {
+      _file!.pages![currentPage].layers![0].content = List.from(content);
+    });
+    _pageStackKey.currentState?.setPageData(_file!.pages![currentPage]);
+  }
+
+  void _undo() {
+    if (_undoStack.isEmpty) return;
+    _redoStack.add(List.from(_currentContent));
+    _applyContent(_undoStack.removeLast());
+  }
+
+  void _redo() {
+    if (_redoStack.isEmpty) return;
+    _undoStack.add(List.from(_currentContent));
+    _applyContent(_redoStack.removeLast());
+  }
+
+  // ── Send to KP ──────────────────────────────────────────────────────────────
+
+  Future<void> sendToKP() async {
+    if (_file == null) return;
+
+    // Prompt for host if not stored
+    final prefs = await SharedPreferences.getInstance();
+    String host  = prefs.getString('kp_host') ?? '';
+    const port   = 8421;
+
+    if (host.isEmpty) {
+      final ctrl = TextEditingController(text: 'localhost');
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Send to KP'),
+          content: TextField(
+            controller: ctrl,
+            decoration:
+                const InputDecoration(labelText: 'KP host / IP'),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel')),
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Connect')),
+          ],
+        ),
+      );
+      if (ok != true || !mounted) return;
+      host = ctrl.text.trim();
+      if (host.isEmpty) return;
+      await prefs.setString('kp_host', host);
+    }
+
+    // Encode file to gzip bytes
+    final bytes = _file!.toUint8List();
+    if (bytes == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to encode file')));
+      return;
+    }
+
+    // HTTP POST to KP
+    final snack = ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text('Sending to $host:$port…'),
+          duration: const Duration(seconds: 30)));
+    try {
+      final client = io.HttpClient();
+      client.connectionTimeout = const Duration(seconds: 10);
+      final req = await client
+          .postUrl(Uri.parse('http://$host:$port/upload_xopp'));
+      req.headers.contentType =
+          io.ContentType('application', 'x-xopp');
+      req.contentLength = bytes.length;
+      req.add(bytes);
+      final res = await req.close();
+      client.close();
+      snack.close();
+      if (!mounted) return;
+      if (res.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sent to KP ($host)')));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('KP returned ${res.statusCode}')));
+      }
+    } catch (e) {
+      snack.close();
+      if (!mounted) return;
+      // Clear cached host so user can re-enter
+      await prefs.remove('kp_host');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')));
+    }
   }
 
   void _onAnimationReset() {

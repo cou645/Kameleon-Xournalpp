@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:xournalpp/layer_contents/XppImage.dart';
 import 'package:xournalpp/layer_contents/XppStroke.dart';
 import 'package:xournalpp/layer_contents/XppTexImage.dart';
 import 'package:xournalpp/layer_contents/XppText.dart';
@@ -88,6 +89,17 @@ class PointerListenerState extends State<PointerListener> {
                 coordinates:
                     Offset(data.localPosition.dx, data.localPosition.dy),
                 radius: widget.strokeWidth);
+
+          if (isWhiteout(data)) {
+            final double width = (data.pressure == 0
+                ? (widget.strokeWidth ?? 5)
+                : data.pressure * widget.strokeWidth!) * 6;
+            points.add(XppStrokePoint(
+                x: data.localPosition.dx,
+                y: data.localPosition.dy,
+                width: width));
+            setState(() {});
+          }
         },
         onPointerDown: (data) {
           if (_detectTwoFingerGesture(data, shouldPop: true)) return;
@@ -106,10 +118,19 @@ class PointerListenerState extends State<PointerListener> {
             });
           }
           if (isText(data)) {
-            XppText(
-                offset: data.localPosition,
-                color: widget.color,
-                size: widget.strokeWidth! * 3);
+            XppText.edit(
+              context: context,
+              topLeft: data.localPosition,
+              color: widget.color,
+              size: widget.strokeWidth! * 3,
+            ).then((value) {
+              if (value != null) widget.onNewContent!(value);
+            });
+          }
+          if (isImage(data)) {
+            XppImage.open(topLeft: data.localPosition)
+                .then((value) => widget.onNewContent!(value))
+                .catchError((_) {});
           }
         },
         onPointerUp: (data) {
@@ -193,11 +214,22 @@ class PointerListenerState extends State<PointerListener> {
         widget.toolData[data.kind] == EditingTool.LATEX);
   }
 
+  bool isImage(PointerEvent data) {
+    return (widget.toolData.keys.contains(data.kind) &&
+        widget.toolData[data.kind] == EditingTool.IMAGE);
+  }
+
+  bool isWhiteout(PointerEvent data) {
+    return (widget.toolData.keys.contains(data.kind) &&
+        widget.toolData[data.kind] == EditingTool.WHITEOUT);
+  }
+
   XppStrokeTool getToolFromPointer(PointerEvent data) {
     XppStrokeTool tool = XppStrokeTool.PEN;
     if (isHighlighter(data))
       tool = XppStrokeTool.HIGHLIGHTER;
     else if (isEraser(data)) tool = XppStrokeTool.ERASER;
+    else if (isWhiteout(data)) tool = XppStrokeTool.ERASER;
     return tool;
   }
 
