@@ -65,16 +65,16 @@ flutter doctor
 Connect any Android or iOS device, or enable a desktop target (see below).
 
 ```shell
-git clone https://gitlab.com/TheOneWithTheBraid/xournalpp_mobile.git
-cd xournalpp_mobile
+gh clone https://github.com/cou645/Kameleon-Xournalpp.git
+cd Kameleon-Xournalpp
 flutter pub get
 flutter run
 ```
-If you want to test for Linux, Windows or macOS, please run:
+If you want to test for Linux, please run:
 
 ```shell
-flutter config --enable-linux-desktop # or --enable-macos-desktop or --enable-windows-desktop
-flutter run -d linux # or macos or windows
+flutter config --enable-linux-desktop
+flutter run -d linux
 ```
 
 ### Feature roadmap
