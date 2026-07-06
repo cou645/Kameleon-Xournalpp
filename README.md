@@ -3,7 +3,7 @@
 ***Warning:*** *Xournal++ Mobile is currently in development and **not 100%** stable. Use with caution!*
 
 
-A port of the main features of Xournal++ to various Flutter platforms like Android.
+A port of the main features of Xournal++ to Android Flutter platform.
 
 ![Feature banner](https://gitlab.com/TheOneWithTheBraid/xournalpp_mobile/-/raw/master/assets/feature-banner.svg)
 
