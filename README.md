@@ -1,4 +1,9 @@
 # <img src="assets/xournalpp-adaptive.png" width="64" style="height: auto;"/> Xournal++ Mobile
+I am stemsee. I use the linux desktop xournalpp and decided to fix and improve the mobile app which
+until now was out of date and incomplete. The warning below is just a disclaimer, it is working very well.
+I do not like using github very much so you will not find everything managed professionally, except the code!!
+I vibe code with claude code and kimi-cli. Build from these sources for latest. Releases Download is beta.
+I will update it later.
 
 ***Warning:*** *Xournal++ Mobile is currently in development and **not 100%** stable. Use with caution!*
 
@@ -12,7 +17,6 @@ A port of the main features of Xournal++ to Android Flutter platform.
 ***Mission completed:** We can now render strokes, images and text and LaTeX!. We thereby support the full `.xopp` file format.* :tada:
 
 - Android
-  - [Download APK](https://github.com/cou645/kameleon_xournalpp/)
 
 ### Visible parts already working
 
@@ -74,6 +78,7 @@ If you want to test for Linux, please run:
 ```shell
 flutter config --enable-linux-desktop
 flutter run -d linux
+NOT TESTED
 ```
 
 ### Feature roadmap
