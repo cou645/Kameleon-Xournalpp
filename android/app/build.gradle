@@ -36,3 +36,77 @@ android {
 flutter {
     source '../..'
 }
+
+// ---------------------------------------------------------------------------
+// Apply small, targeted patches to Flutter plugins in pub-cache that are
+// otherwise incompatible with this Flutter / Android toolchain. Patches are
+// idempotent: if the marker text is already present the plugin is skipped.
+// ---------------------------------------------------------------------------
+def getPluginPath(String pluginName) {
+    def flutterPlugins = file('../../.flutter-plugins')
+    if (!flutterPlugins.exists()) {
+        return null
+    }
+    def pluginLine = flutterPlugins.readLines().find { it.startsWith("${pluginName}=") }
+    if (!pluginLine) {
+        return null
+    }
+    return pluginLine.substring("${pluginName}=".length()).trim()
+}
+
+def applyPatchIfNeeded(String pluginName, String markerFilePath, String markerText, String patchFileName) {
+    def pluginPath = getPluginPath(pluginName)
+    if (!pluginPath) {
+        logger.lifecycle("patchPlugins: $pluginName not in .flutter-plugins, skipping")
+        return
+    }
+
+    def markerFile = file("$pluginPath/$markerFilePath")
+    if (!markerFile.exists()) {
+        logger.lifecycle("patchPlugins: $markerFilePath not found in $pluginName, skipping")
+        return
+    }
+
+    if (markerFile.text.contains(markerText)) {
+        logger.lifecycle("patchPlugins: $pluginName already patched, skipping")
+        return
+    }
+
+    def patchFile = file("../../tools/$patchFileName")
+    if (!patchFile.exists()) {
+        logger.lifecycle("patchPlugins: $patchFileName not found, skipping")
+        return
+    }
+
+    exec {
+        workingDir pluginPath
+        commandLine 'patch', '-p0', '-i', patchFile.absolutePath
+    }
+    logger.lifecycle("patchPlugins: applied $patchFileName to $pluginName")
+}
+
+def patchPlugins() {
+    // file_picker 4.3.3: skip READ_EXTERNAL_STORAGE permission gate on Android 13+.
+    applyPatchIfNeeded(
+        'file_picker',
+        'android/src/main/java/com/mr/flutter/plugin/filepicker/FilePickerDelegate.java',
+        'Build.VERSION.SDK_INT < 33',
+        'file_picker_android13.patch'
+    )
+
+    // pdfx 2.9.2: Flutter 3.41 changed SurfaceProducer.Callback to onSurfaceCreated().
+    applyPatchIfNeeded(
+        'pdfx',
+        'android/src/main/kotlin/io/scer/pdfx/Messages.kt',
+        'override fun onSurfaceCreated()',
+        'pdfx_flutter3_41.patch'
+    )
+}
+
+tasks.register('patchPlugins') {
+    doLast { patchPlugins() }
+}
+
+afterEvaluate {
+    preBuild.dependsOn tasks.named('patchPlugins')
+}

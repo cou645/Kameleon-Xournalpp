@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:xml/xml.dart';
 import 'package:xournalpp/src/HexColor.dart';
@@ -10,42 +12,53 @@ abstract class XppStroke extends XppContent {
       {this.tool = XppStrokeTool.PEN,
       this.points,
       this.color,
-      this.editingTool});
+      this.editingTool,
+      this.capStyle,
+      this.fill,
+      this.style,
+      this.audioTs,
+      this.audioFn});
 
   XppStrokeTool tool;
   List<XppStrokePoint>? points;
   Color? color;
   EditingTool? editingTool;
 
+  /// Desktop stroke attributes preserved for round-trip.
+  String? capStyle;
+  String? fill;
+  String? style;
+  String? audioTs;
+  String? audioFn;
+
   @override
   Offset getOffset() {
     if (points!.isEmpty) return Offset(0, 0);
-    double? x = points![0].x;
-    // finding smallest x point
-    points!.forEach((point) {
-      if (point.x! < x!) x = point.x;
-    });
+    double x = points![0].x!;
     double y = points![0].y!;
-    // finding smallest y point
     points!.forEach((point) {
-      if (point.y! < y) x = point.y;
+      if (point.x! < x) x = point.x!;
+      if (point.y! < y) y = point.y!;
     });
-    return (Offset(x!, y));
+    return Offset(x, y);
   }
 
   Offset get bottomRight {
     if (points!.isEmpty) return Offset(0, 0);
-    double? x = points![0].x;
-    // finding largest x point
-    points!.forEach((point) {
-      if (point.x! > x!) x = point.x;
-    });
+    double x = points![0].x!;
     double y = points![0].y!;
-    // finding largest y point
     points!.forEach((point) {
-      if (point.y! > y) x = point.y;
+      if (point.x! > x) x = point.x!;
+      if (point.y! > y) y = point.y!;
     });
-    return (Offset(x!, y));
+    return Offset(x, y);
+  }
+
+  @override
+  Rect getBounds() {
+    final topLeft = getOffset();
+    final br = bottomRight;
+    return Rect.fromLTRB(topLeft.dx, topLeft.dy, br.dx, br.dy);
   }
 
   @override
@@ -54,9 +67,9 @@ abstract class XppStroke extends XppContent {
       return XppPageContentWidget(child: (Container()));
     }
     Color? colorToUse = color;
-    if (tool == XppStrokeTool.ERASER) color = Colors.white;
+    if (tool == XppStrokeTool.ERASER) colorToUse = Colors.white;
     if (tool == XppStrokeTool.HIGHLIGHTER) {
-      color = color!.withOpacity(.5);
+      colorToUse = color!.withOpacity(.5);
     }
     return XppPageContentWidget(
       child: CustomPaint(
@@ -86,12 +99,28 @@ abstract class XppStroke extends XppContent {
         toolString = 'eraser';
         break;
     }
-    XmlElement node = XmlElement(XmlName('stroke'), [
+    final attributes = <XmlAttribute>[
       XmlAttribute(XmlName('tool'), toolString),
       XmlAttribute(XmlName('color'), color!.toHexTriplet()),
       XmlAttribute(
           XmlName('width'), points!.map((e) => e.width.toString()).join(' ')),
-    ], [
+    ];
+    if (capStyle != null && capStyle!.isNotEmpty) {
+      attributes.add(XmlAttribute(XmlName('capStyle'), capStyle!));
+    }
+    if (fill != null && fill!.isNotEmpty) {
+      attributes.add(XmlAttribute(XmlName('fill'), fill!));
+    }
+    if (style != null && style!.isNotEmpty) {
+      attributes.add(XmlAttribute(XmlName('style'), style!));
+    }
+    if (audioTs != null && audioTs!.isNotEmpty) {
+      attributes.add(XmlAttribute(XmlName('ts'), audioTs!));
+      if (audioFn != null && audioFn!.isNotEmpty) {
+        attributes.add(XmlAttribute(XmlName('fn'), audioFn!));
+      }
+    }
+    XmlElement node = XmlElement(XmlName('stroke'), attributes, [
       XmlText(
           points!.map((e) => e.x.toString() + ' ' + e.y.toString()).join(' '))
     ]);
@@ -130,15 +159,68 @@ abstract class XppStroke extends XppContent {
 
   @override
   bool inRegion({Offset? topLeft, Offset? bottomRight}) {
-    // TODO: implement shouldSelectAt
-    throw UnimplementedError();
+    final bounds = getBounds();
+    final region = Rect.fromLTRB(
+        topLeft!.dx, topLeft.dy, bottomRight!.dx, bottomRight.dy);
+    return region.contains(bounds.topLeft) && region.contains(bounds.bottomRight);
   }
 
   @override
   bool shouldSelectAt({Offset? coordinates, EditingTool? tool}) {
-    // TODO: implement shouldSelectAt
-    throw UnimplementedError();
+    const tapThreshold = 12.0;
+    if (points!.length == 1) {
+      return (points![0].offset - coordinates!).distance < tapThreshold;
+    }
+    for (int i = 1; i < points!.length; i++) {
+      if (_distanceToSegment(
+              coordinates!, points![i - 1].offset, points![i].offset) <
+          tapThreshold) return true;
+    }
+    return false;
   }
+
+  static double _distanceToSegment(Offset p, Offset a, Offset b) {
+    final ab = b - a;
+    final ap = p - a;
+    final ab2 = ab.dx * ab.dx + ab.dy * ab.dy;
+    if (ab2 == 0) return ap.distance;
+    final t = ((ap.dx * ab.dx + ap.dy * ab.dy) / ab2).clamp(0.0, 1.0);
+    final projection = a + ab * t;
+    return (p - projection).distance;
+  }
+
+  @override
+  void translate(Offset delta) {
+    points!.forEach((point) {
+      point.x = point.x! + delta.dx;
+      point.y = point.y! + delta.dy;
+    });
+  }
+
+  @override
+  void applyScaleDelta(double scaleDelta, {Offset? anchor}) {
+    final a = anchor ?? getOffset();
+    points!.forEach((point) {
+      point.x = a.dx + (point.x! - a.dx) * scaleDelta;
+      point.y = a.dy + (point.y! - a.dy) * scaleDelta;
+    });
+  }
+
+  @override
+  void applyRotationDelta(double radians, {Offset? center}) {
+    final c = center ?? getBounds().center;
+    final cos = math.cos(radians);
+    final sin = math.sin(radians);
+    points!.forEach((point) {
+      final dx = point.x! - c.dx;
+      final dy = point.y! - c.dy;
+      point.x = c.dx + dx * cos - dy * sin;
+      point.y = c.dy + dx * sin + dy * cos;
+    });
+  }
+
+  @override
+  XppStroke clone();
 
   XppStroke newStroke({Color? color, List<XppStrokePoint>? points});
 
@@ -152,17 +234,43 @@ abstract class XppStroke extends XppContent {
   static XppStroke byTool(
       {required XppStrokeTool tool,
       List<XppStrokePoint>? points,
-      Color? color}) {
+      Color? color,
+      String? capStyle,
+      String? fill,
+      String? style,
+      String? audioTs,
+      String? audioFn}) {
     XppStroke? stroke;
     switch (tool) {
       case XppStrokeTool.PEN:
-        stroke = XppStrokePen(color: color, points: points);
+        stroke = XppStrokePen(
+            color: color,
+            points: points,
+            capStyle: capStyle,
+            fill: fill,
+            style: style,
+            audioTs: audioTs,
+            audioFn: audioFn);
         break;
       case XppStrokeTool.HIGHLIGHTER:
-        stroke = XppStrokeHighlight(color: color, points: points);
+        stroke = XppStrokeHighlight(
+            color: color,
+            points: points,
+            capStyle: capStyle,
+            fill: fill,
+            style: style,
+            audioTs: audioTs,
+            audioFn: audioFn);
         break;
       case XppStrokeTool.ERASER:
-        stroke = XppStrokeWhiteout(color: color, points: points);
+        stroke = XppStrokeWhiteout(
+            color: color,
+            points: points,
+            capStyle: capStyle,
+            fill: fill,
+            style: style,
+            audioTs: audioTs,
+            audioFn: audioFn);
         break;
     }
     return stroke;
@@ -175,16 +283,41 @@ class XppStrokePen extends XppStroke {
   Color? color;
 
   EditingTool? editingTool;
-  XppStrokePen({this.points, this.color})
+  XppStrokePen(
+      {this.points,
+      this.color,
+      String? capStyle,
+      String? fill,
+      String? style,
+      String? audioTs,
+      String? audioFn})
       : super(
             points: points,
             color: color,
             tool: XppStrokeTool.PEN,
-            editingTool: EditingTool.STYLUS);
+            editingTool: EditingTool.STYLUS,
+            capStyle: capStyle,
+            fill: fill,
+            style: style,
+            audioTs: audioTs,
+            audioFn: audioFn);
 
   @override
   XppStroke newStroke({Color? color, List<XppStrokePoint>? points}) {
     return XppStrokePen(points: points, color: color);
+  }
+
+  @override
+  XppStroke clone() {
+    return XppStrokePen(
+      color: color,
+      points: points!.map((p) => p.clone()).toList(),
+      capStyle: capStyle,
+      fill: fill,
+      style: style,
+      audioTs: audioTs,
+      audioFn: audioFn,
+    );
   }
 }
 
@@ -194,16 +327,41 @@ class XppStrokeWhiteout extends XppStroke {
   Color? color;
 
   EditingTool? editingTool;
-  XppStrokeWhiteout({this.points, this.color})
+  XppStrokeWhiteout(
+      {this.points,
+      this.color,
+      String? capStyle,
+      String? fill,
+      String? style,
+      String? audioTs,
+      String? audioFn})
       : super(
             points: points,
             color: color,
             tool: XppStrokeTool.ERASER,
-            editingTool: EditingTool.WHITEOUT);
+            editingTool: EditingTool.WHITEOUT,
+            capStyle: capStyle,
+            fill: fill,
+            style: style,
+            audioTs: audioTs,
+            audioFn: audioFn);
 
   @override
   XppStroke newStroke({Color? color, List<XppStrokePoint>? points}) {
     return XppStrokeWhiteout(points: points, color: color);
+  }
+
+  @override
+  XppStroke clone() {
+    return XppStrokeWhiteout(
+      color: color,
+      points: points!.map((p) => p.clone()).toList(),
+      capStyle: capStyle,
+      fill: fill,
+      style: style,
+      audioTs: audioTs,
+      audioFn: audioFn,
+    );
   }
 }
 
@@ -213,16 +371,41 @@ class XppStrokeHighlight extends XppStroke {
   Color? color;
 
   EditingTool? editingTool;
-  XppStrokeHighlight({this.points, this.color})
+  XppStrokeHighlight(
+      {this.points,
+      this.color,
+      String? capStyle,
+      String? fill,
+      String? style,
+      String? audioTs,
+      String? audioFn})
       : super(
             points: points,
             color: color,
             tool: XppStrokeTool.HIGHLIGHTER,
-            editingTool: EditingTool.HIGHLIGHT);
+            editingTool: EditingTool.HIGHLIGHT,
+            capStyle: capStyle,
+            fill: fill,
+            style: style,
+            audioTs: audioTs,
+            audioFn: audioFn);
 
   @override
   XppStroke newStroke({Color? color, List<XppStrokePoint>? points}) {
     return XppStrokeHighlight(points: points, color: color);
+  }
+
+  @override
+  XppStroke clone() {
+    return XppStrokeHighlight(
+      color: color,
+      points: points!.map((p) => p.clone()).toList(),
+      capStyle: capStyle,
+      fill: fill,
+      style: style,
+      audioTs: audioTs,
+      audioFn: audioFn,
+    );
   }
 }
 
@@ -308,11 +491,13 @@ enum XppStrokeTool {
 }
 
 class XppStrokePoint {
-  final double? x;
-  final double? y;
-  final double? width;
+  double? x;
+  double? y;
+  double? width;
 
   XppStrokePoint({this.x, this.y, this.width});
 
   Offset get offset => Offset(x!, y!);
+
+  XppStrokePoint clone() => XppStrokePoint(x: x, y: y, width: width);
 }

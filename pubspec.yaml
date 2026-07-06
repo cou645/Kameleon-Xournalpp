@@ -29,12 +29,14 @@ dependencies:
   font_awesome_flutter: ^10.8.0
   flutter_math_fork: ^0.7.4
   pdfx: ^2.9.2
+  pdf: ^3.11.3
 
 dev_dependencies:
   flutter_test:
     sdk:
       flutter
   flutter_launcher_icons: ^0.14.3
+  intl_utils: ^2.8.7
 
 flutter_icons:
    android: true
@@ -44,6 +46,28 @@ flutter_icons:
    image_path_android: "assets/xournalpp-adaptive.png"
    adaptive_icon_background: "#673ab7"
    adaptive_icon_foreground: "assets/xournalpp-android.png"
+
+dependency_overrides:
+  # Vendored with Android cloud-file (null path) fix.
+  # See vendor/file_picker_cross/lib/src/file_picker_mobile.dart
+  file_picker_cross:
+    path: vendor/file_picker_cross
+  # Vendored and updated for AGP 8 / Kotlin 1.9 compatibility.
+  disk_space:
+    path: vendor/disk_space
+  # Pin to the API version used by the app (getMediaStream, SharedMediaFile(path, ...)).
+  receive_sharing_intent:
+    path: vendor/receive_sharing_intent
+  # 10.9.1 uses Color.withValues()/Color.a which are absent from this Flutter build.
+  font_awesome_flutter: 10.7.0
+  # 6.1.2 is missing the exclusive parameter required by Dart 3's File interface.
+  file: 7.0.0
+  # 1.4.2 pulls in package_info_plus_windows 1.0.5 with invalid nullable FFI fields.
+  package_info_plus_windows:
+    path: vendor/package_info_plus_windows
+  # 0.7.4 uses RenderObjectWithLayoutCallbackMixin/runLayoutCallback removed in Flutter 3.41.
+  flutter_math_fork:
+    path: vendor/flutter_math_fork
 
 flutter:
   uses-material-design: true

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -145,45 +146,51 @@ class XppFile {
       if (pageElement.findElements('background').isNotEmpty) {
         XmlElement backgroundElement =
             pageElement.findElements('background').toList()[0];
+        final bgColor = parseColor(backgroundElement.getAttribute('color') ?? 'white');
+        final domain = _parseBackgroundDomain(backgroundElement.getAttribute('domain'));
         switch (backgroundElement.getAttribute('type')) {
           case "pixmap":
             background = XppBackgroundImage(
-                filename: backgroundElement.getAttribute('filename'));
+                filename: backgroundElement.getAttribute('filename'),
+                domain: domain);
             break;
           case "pdf":
             background = XppBackgroundPdf(
                 onUnavailable: onUnavailable,
                 filename: backgroundElement.getAttribute('filename'),
-                page: int.parse(backgroundElement.getAttribute('pageno')!));
+                page: int.parse(backgroundElement.getAttribute('pageno')!),
+                domain: domain);
             break;
           case "solid":
             switch (backgroundElement.getAttribute('style')) {
               case 'lined':
                 background = XppBackgroundSolidLined(
-                    size: pageSize,
-                    color: parseColor(backgroundElement.getAttribute('color')));
+                    size: pageSize, color: bgColor);
                 break;
               case 'ruled':
                 background = XppBackgroundSolidRuled(
-                    size: pageSize,
-                    color: parseColor(backgroundElement.getAttribute('color')));
+                    size: pageSize, color: bgColor);
                 break;
               case 'graph':
                 background = XppBackgroundSolidGraph(
-                    size: pageSize,
-                    color: parseColor(backgroundElement.getAttribute('color')));
+                    size: pageSize, color: bgColor);
+                break;
+              case 'dotted':
+                background = XppBackgroundSolidDot(
+                    size: pageSize, color: bgColor);
                 break;
               case 'plain':
                 background = XppBackgroundSolidPlain(
-                    size: pageSize,
-                    color: parseColor(backgroundElement.getAttribute('color')));
+                    size: pageSize, color: bgColor);
                 break;
               default:
-                background = XppBackground.none;
+                background = XppBackgroundSolidLined(
+                    size: pageSize, color: bgColor);
             }
             break;
           default:
-            background = XppBackground.none;
+            background = XppBackgroundSolidLined(
+                size: pageSize, color: bgColor);
             break;
         }
       }
@@ -216,18 +223,25 @@ class XppFile {
 
         /// processing all images first
         layer.findElements('image').forEach((imageElement) {
+          final rotationDeg = double.tryParse(
+                  imageElement.getAttribute('rotation') ?? '0') ??
+              0;
           content[int.parse(imageElement.getAttribute('counter')!)] = XppImage(
               data: base64Decode(imageElement.text.trim()),
               topLeft: Offset(double.parse(imageElement.getAttribute('left')!),
                   double.parse(imageElement.getAttribute('top')!)),
               bottomRight: Offset(
                   double.parse(imageElement.getAttribute('right')!),
-                  double.parse(imageElement.getAttribute('bottom')!)));
+                  double.parse(imageElement.getAttribute('bottom')!)),
+              rotation: rotationDeg * pi / 180);
         });
 
         /// processing all texts
         layer.findElements('text').forEach((textElement) {
           Color color = parseColor(textElement.getAttribute('color'));
+          final rotationDeg = double.tryParse(
+                  textElement.getAttribute('rotation') ?? '0') ??
+              0;
           content[int.parse(textElement.getAttribute('counter')!)] = XppText(
               color: color,
               // note: not trimming
@@ -247,11 +261,18 @@ class XppFile {
                   double.parse(textElement.getAttribute('size')!)),
               fontFamily: textElement.getAttribute('font'),
               offset: Offset(double.parse(textElement.getAttribute('x')!),
-                  double.parse(textElement.getAttribute('y')!)));
+                  double.parse(textElement.getAttribute('y')!)),
+              rotation: rotationDeg * pi / 180);
         });
 
         /// processing all lateximages
         layer.findElements('teximage').forEach((texElement) {
+          final scale = double.tryParse(
+                  texElement.getAttribute('xpp-scale') ?? '1') ??
+              1;
+          final rotationDeg = double.tryParse(
+                  texElement.getAttribute('xpp-rotation') ?? '0') ??
+              0;
           content[int.parse(texElement.getAttribute('counter')!)] = XppTexImage(
               text: texElement.getAttribute('text')!.trim(),
               color: parseColor(texElement.getAttribute('color')!.trim()),
@@ -259,7 +280,9 @@ class XppFile {
                   double.parse(texElement.getAttribute('top')!)),
               bottomRight: Offset(
                   double.parse(texElement.getAttribute('right')!),
-                  double.parse(texElement.getAttribute('bottom')!)));
+                  double.parse(texElement.getAttribute('bottom')!)),
+              scale: scale,
+              rotation: rotationDeg * pi / 180);
         });
 
         /// processing all strokes
@@ -271,9 +294,9 @@ class XppFile {
               break;
             case "eraser":
               tool = XppStrokeTool.ERASER;
-
-              /// TODO: implement whiteout eraser
-              return;
+              // Loaded as a whiteout stroke. This preserves the data on
+              // round-trip; true desktop-style erasing is not yet implemented.
+              break;
             case "highlighter":
               tool = XppStrokeTool.HIGHLIGHTER;
               break;
@@ -296,10 +319,19 @@ class XppFile {
           }
           if (points.isEmpty) return;
           content[int.parse(strokeElement.getAttribute('counter')!)] =
-              XppStroke.byTool(tool: tool, color: color, points: points);
+              XppStroke.byTool(
+                  tool: tool,
+                  color: color,
+                  points: points,
+                  capStyle: strokeElement.getAttribute('capStyle'),
+                  fill: strokeElement.getAttribute('fill'),
+                  style: strokeElement.getAttribute('style'),
+                  audioTs: strokeElement.getAttribute('ts'),
+                  audioFn: strokeElement.getAttribute('fn'));
         });
 
         layers.add(XppLayer(
+            name: layer.getAttribute('name'),
             content:
                 List.generate(content.keys.length, (index) => content[index])));
         layerIndex++;
@@ -380,6 +412,18 @@ class XppFile {
     Uint8List bytes = toUint8List()!;
     return FilePickerCross(bytes,
         type: FileTypeCross.custom, fileExtension: 'xopp', path: filePath);
+  }
+}
+
+XppBackgroundImageDomain _parseBackgroundDomain(String? domainString) {
+  switch (domainString) {
+    case 'attach':
+      return XppBackgroundImageDomain.ATTACH;
+    case 'clone':
+      return XppBackgroundImageDomain.CLONE;
+    case 'absolute':
+    default:
+      return XppBackgroundImageDomain.ABSOLUTE;
   }
 }
 

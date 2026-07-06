@@ -78,5 +78,22 @@
   "sharePage": "Seite teilen...",
   "successfullyShared": "Erfolgreich geteilt:",
   "openNavigation": "Navigation öffnen",
-  "importPdf": "PDF importieren"
+  "importPdf": "PDF importieren",
+  "exportPdf": "PDF exportieren",
+  "manageLayers": "Ebenen verwalten",
+  "layers": "Ebenen",
+  "addLayer": "Ebene hinzufügen",
+  "renameLayer": "Ebene umbenennen",
+  "layerName": "Ebenenname",
+  "select": "Auswählen",
+  "colorAndThickness": "Farbe & Dicke",
+  "copied": "Kopiert",
+  "renderingPdf": "PDF wird erstellt…",
+  "pdfExportedTo": "PDF exportiert nach {path}",
+  "pdfExportFailed": "PDF-Export fehlgeschlagen: {error}",
+  "couldNotSetPdfBackground": "PDF-Hintergrund konnte nicht gesetzt werden: {error}",
+  "couldNotSetImageBackground": "Bild-Hintergrund konnte nicht gesetzt werden: {error}",
+  "pdfPage": "PDF-Seite",
+  "pageNumber": "Seitennummer",
+  "whiteout": "Korrektur"
 }

@@ -19,7 +19,46 @@ pluginManagement {
 plugins {
     id "dev.flutter.flutter-plugin-loader" version "1.0.0"
     id "com.android.application" version "8.5.2" apply false
+    id "com.android.library" version "8.5.2" apply false
     id "org.jetbrains.kotlin.android" version "1.9.22" apply false
 }
 
 include ":app"
+
+// AGP 8 requires every Android module to declare a namespace. Many older
+// plugins still only specify the package name in AndroidManifest.xml. This
+// hook copies the manifest package into the namespace field when missing,
+// avoiding "Namespace not specified" build failures for plugins like
+// disk_space.
+gradle.beforeProject { project ->
+    project.pluginManager.withPlugin("com.android.library") {
+        project.android {
+            if (namespace == null) {
+                def manifestFile = project.file("src/main/AndroidManifest.xml")
+                if (manifestFile.exists()) {
+                    def manifestText = manifestFile.text
+                    def matcher = manifestText =~ /package="([^"]+)"/
+                    if (matcher.find()) {
+                        namespace = matcher.group(1)
+                    }
+                }
+            }
+            // Some plugins default to Java 1.8 while the system JDK compiles
+            // Kotlin to 21, causing "Inconsistent JVM-target compatibility".
+            // Force Java 11 and a modern compileSdk everywhere.
+            compileSdkVersion 36
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_11
+                targetCompatibility JavaVersion.VERSION_11
+            }
+        }
+    }
+    // Apply Kotlin JVM target once the Kotlin Android plugin is available.
+    project.pluginManager.withPlugin("org.jetbrains.kotlin.android") {
+        project.android {
+            kotlinOptions {
+                jvmTarget = "11"
+            }
+        }
+    }
+}

@@ -1,0 +1,29 @@
+name: package_info_plus_windows
+description: Windows implementation of the package_info_plus plugin
+version: 1.0.5
+homepage: https://plus.fluttercommunity.dev/
+repository: https://github.com/fluttercommunity/plus_plugins/tree/main/packages/
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+  flutter: ">=1.20.0"
+
+dependencies:
+  package_info_plus_platform_interface: ^1.0.2
+  ffi: ^1.0.0
+  flutter:
+    sdk: flutter
+  win32: ^2.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^1.0.4
+
+flutter:
+  plugin:
+    implements: package_info_plus
+    platforms:
+      windows:
+        dartPluginClass: PackageInfoWindows
+        pluginClass: none

@@ -78,5 +78,22 @@
   "sharePage": "Share page...",
   "successfullyShared": "Successfully shared",
   "openNavigation": "Open navigation",
-  "importPdf": "Import PDF"
+  "importPdf": "Import PDF",
+  "exportPdf": "Export PDF",
+  "manageLayers": "Manage Layers",
+  "layers": "Layers",
+  "addLayer": "Add layer",
+  "renameLayer": "Rename layer",
+  "layerName": "Layer name",
+  "select": "Select",
+  "colorAndThickness": "Color & thickness",
+  "copied": "Copied",
+  "renderingPdf": "Rendering PDF…",
+  "pdfExportedTo": "PDF exported to {path}",
+  "pdfExportFailed": "PDF export failed: {error}",
+  "couldNotSetPdfBackground": "Could not set PDF background: {error}",
+  "couldNotSetImageBackground": "Could not set image background: {error}",
+  "pdfPage": "PDF page",
+  "pageNumber": "Page number",
+  "whiteout": "Whiteout"
 }

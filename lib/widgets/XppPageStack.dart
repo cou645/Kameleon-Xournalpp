@@ -19,8 +19,7 @@ class XppPageStack extends StatefulWidget {
   XppPageStackState createState() => XppPageStackState();
 }
 
-class XppPageStackState extends State<XppPageStack>
-    with AutomaticKeepAliveClientMixin {
+class XppPageStackState extends State<XppPageStack> {
   GlobalKey pngKey = GlobalKey();
   XppPage? page;
 
@@ -35,7 +34,6 @@ class XppPageStackState extends State<XppPageStack>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     List<Widget> children = [];
 
     if (page!.background != null && _lastKnownBackground != page!.background) {
@@ -64,14 +62,12 @@ class XppPageStackState extends State<XppPageStack>
     RenderRepaintBoundary boundary =
         pngKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
     ui.Image image = await boundary.toImage();
-    ByteData byteData = await (image.toByteData(format: ui.ImageByteFormat.png)
-        as FutureOr<ByteData>);
+    ByteData? byteData =
+        await image.toByteData(format: ui.ImageByteFormat.png);
+    if (byteData == null) throw StateError('Failed to encode page as PNG');
     Uint8List pngBytes = byteData.buffer.asUint8List();
     return pngBytes;
   }
-
-  @override
-  bool get wantKeepAlive => true;
 
   @override
   void didUpdateWidget(covariant XppPageStack oldWidget) {
@@ -90,27 +86,24 @@ class XppLayerStack extends StatefulWidget {
 }
 
 class _XppLayerStackState extends State<XppLayerStack> {
-  Map<XppContent, Widget> renderedContent = {};
   @override
   Widget build(BuildContext context) {
     List<Widget> children = [];
     widget.layer!.content!.forEach((element) {
       if (element == null) return;
-      if (!renderedContent.keys.contains(element)) {
-        renderedContent[element] = Positioned(
-          child: element.render(),
-          top: element.getOffset()?.dy ?? 0,
-          left: element.getOffset()?.dx ?? 0,
-        );
-      }
-      Widget? w = renderedContent[element];
-      if (w == null) return;
+      Widget content = element.render();
       if (element is XppText && widget.onEditContent != null) {
-        w = GestureDetector(
+        content = GestureDetector(
           onDoubleTap: () => widget.onEditContent!(element),
-          child: w,
+          child: content,
         );
       }
+      final w = Positioned(
+        key: ValueKey(element),
+        child: content,
+        top: element.getOffset()?.dy ?? 0,
+        left: element.getOffset()?.dx ?? 0,
+      );
       children.add(w);
     });
     return Stack(

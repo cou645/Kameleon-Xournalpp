@@ -37,14 +37,24 @@ sudo snap install xournalpp-mobile
 - [x] Smooth fade in after thumbnail rendering
 - [x] Render images on the canvas
 - [x] Render text on the canvas
-- [x] Strokes
+- [x] Render LaTeX on the canvas
+- [x] Strokes (pen)
 - [x] Highlighter
-- [x] LaTeX
+- [x] Classic eraser
+- [x] Whiteout eraser
+- [x] Shape tools (line, rectangle, ellipse)
+- [x] Text tool (new text via dialog; existing text edited inline on the page)
+- [x] Image insertion from device storage
+- [x] Selection tool with hit-testing
+- [x] Move, resize and rotate selected objects
+- [x] Copy / cut / paste / delete within the app
+- [x] Layer management (add, rename, delete, reorder, switch active layer)
+- [x] Page backgrounds (plain, lined, ruled, graph, dotted; PDF or image)
 - [x] Recent files list
-- [ ] Whiteout eraser
 - [x] Saving
-- [x] Basic editing
 - [x] Basic PDF rendering
+- [x] Export page to PNG
+- [x] Export document to PDF
 
 ## Known issues
 
@@ -71,12 +81,13 @@ flutter doctor
 
 ### Get the sources and run
 
-Connect any Android or iOS device.
+Connect any Android or iOS device, or enable a desktop target (see below).
 
 ```shell
 git clone https://gitlab.com/TheOneWithTheBraid/xournalpp_mobile.git
 cd xournalpp_mobile
-flutter run --no-sound-null-safety
+flutter pub get
+flutter run
 ```
 
 ### Test for the web
@@ -84,10 +95,8 @@ flutter run --no-sound-null-safety
 If you want to test for the web, please run:
 
 ```shell
-flutter channel beta
-flutter upgrade
 flutter config --enable-web
-flutter run -d web --release --no-sound-null-safety # unfortunately, the debug flavour will result an empty screen
+flutter run -d web --release  # the debug flavour may result in an empty screen on some browsers
 ```
 
 ### Desktop support
@@ -99,11 +108,13 @@ Windows is supported and tested too, but there are unfortunately no prebuilt bin
 If you want to test for Linux, Windows or macOS, please run:
 
 ```shell
-flutter channel master
-flutter upgrade
 flutter config --enable-linux-desktop # or --enable-macos-desktop or --enable-windows-desktop
-flutter run -d linux --no-sound-null-safety # or macos or windows
+flutter run -d linux # or macos or windows
 ```
+
+### Feature roadmap
+
+See [FEATURES.md](FEATURES.md) for the full feature list and [TODO.md](TODO.md) for the roadmap to desktop parity.
 
 ## Colors and Typography
 

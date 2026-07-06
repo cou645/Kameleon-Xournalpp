@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:xml/xml.dart';
@@ -9,29 +11,62 @@ import 'package:xournalpp/widgets/ToolBoxBottomSheet.dart';
 class XppText extends XppContent {
   @required
   final Color? color;
+  double? size;
+  String? text;
   @required
-  final double? size;
-  @required
-  final String? text;
-  @required
-  final Offset? offset;
+  Offset? offset;
   @required
   final String? fontFamily;
 
-  XppText({this.size, this.offset, this.fontFamily, this.color, this.text});
+  /// Mobile-only rotation, in radians.
+  double rotation;
+
+  XppText(
+      {this.size,
+      this.offset,
+      this.fontFamily,
+      this.color,
+      this.text,
+      this.rotation = 0});
 
   @override
   Offset? getOffset() => offset;
 
-  @override
-  XppPageContentWidget render() {
-    return XppPageContentWidget(
-      child: Text(
-        text ?? '',
+  Size _measureText() {
+    final painter = TextPainter(
+      textDirection: TextDirection.ltr,
+      text: TextSpan(
+        text: text ?? '',
         style: TextStyle(
           color: color ?? Colors.black,
           fontSize: size ?? 16,
           fontFamily: fontFamily,
+        ),
+      ),
+    );
+    painter.layout();
+    return painter.size;
+  }
+
+  @override
+  Rect getBounds() {
+    final size = _measureText();
+    return Rect.fromLTWH(offset!.dx, offset!.dy, size.width, size.height);
+  }
+
+  @override
+  XppPageContentWidget render() {
+    return XppPageContentWidget(
+      child: Transform.rotate(
+        angle: rotation,
+        alignment: Alignment.topLeft,
+        child: Text(
+          text ?? '',
+          style: TextStyle(
+            color: color ?? Colors.black,
+            fontSize: size ?? 16,
+            fontFamily: fontFamily,
+          ),
         ),
       ),
       tool: EditingTool.TEXT,
@@ -73,37 +108,75 @@ class XppText extends XppContent {
       color: color,
       size: size,
       text: result,
+      // Default font matches desktop Xournal++'s default Sans font.
+      fontFamily: 'Sans',
     );
   }
 
   @override
-  XmlElement toXmlElement() => XmlElement(XmlName('text'), [
-        XmlAttribute(XmlName('font'), fontFamily!),
-        XmlAttribute(XmlName('size'), size.toString()),
-        XmlAttribute(XmlName('x'), offset!.dx.toString()),
-        XmlAttribute(XmlName('y'), offset!.dy.toString()),
-        XmlAttribute(XmlName('color'), color!.toHexTriplet()),
-      ], [
-        XmlText(encodeText(text!))
-      ]);
+  XmlElement toXmlElement() {
+    final attrs = [
+      XmlAttribute(XmlName('font'), fontFamily ?? 'Sans'),
+      XmlAttribute(XmlName('size'), size.toString()),
+      XmlAttribute(XmlName('x'), offset!.dx.toString()),
+      XmlAttribute(XmlName('y'), offset!.dy.toString()),
+      XmlAttribute(XmlName('color'), color!.toHexTriplet()),
+    ];
+    if (rotation != 0) {
+      attrs.add(XmlAttribute(
+          XmlName('rotation'), (rotation * 180 / math.pi).toStringAsFixed(4)));
+    }
+    return XmlElement(XmlName('text'), attrs, [XmlText(encodeText(text!))]);
+  }
 
   static String encodeText(String text) {
-    text.replaceAll(r'&', r'&amp;');
-    text.replaceAll(r'<', r'&lt;');
-    text.replaceAll(r'>', r'&gt;');
-    return text;
+    return text
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
   }
 
   @override
   bool inRegion({Offset? topLeft, Offset? bottomRight}) {
-    // TODO: implement inRegion
-    throw UnimplementedError();
+    final region = Rect.fromLTRB(
+        topLeft!.dx, topLeft.dy, bottomRight!.dx, bottomRight.dy);
+    return region.contains(getBounds().topLeft) &&
+        region.contains(getBounds().bottomRight);
   }
 
   @override
   bool shouldSelectAt({Offset? coordinates, EditingTool? tool}) {
-    // TODO: implement shouldSelectAt
-    throw UnimplementedError();
+    return getBounds().inflate(8).contains(coordinates!);
+  }
+
+  @override
+  void translate(Offset delta) {
+    offset = offset! + delta;
+  }
+
+  @override
+  void applyScaleDelta(double scaleDelta, {Offset? anchor}) {
+    final a = anchor ?? offset!;
+    offset = Offset(a.dx + (offset!.dx - a.dx) * scaleDelta,
+        a.dy + (offset!.dy - a.dy) * scaleDelta);
+    size = (size ?? 16) * scaleDelta;
+  }
+
+  @override
+  void applyRotationDelta(double radians, {Offset? center}) {
+    rotation += radians;
+  }
+
+  @override
+  XppText clone() {
+    return XppText(
+      text: text,
+      size: size,
+      fontFamily: fontFamily,
+      color: color,
+      offset: offset,
+      rotation: rotation,
+    );
   }
 }
 

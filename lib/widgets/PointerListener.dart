@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
@@ -28,6 +29,7 @@ class PointerListener extends StatefulWidget {
   final Function({Offset? coordinates, double? radius})? filterEraser;
   @required
   final Function()? removeLastContent;
+  final Function(Offset coordinates)? onSelectContent;
 
   const PointerListener(
       {Key? key,
@@ -39,7 +41,8 @@ class PointerListener extends StatefulWidget {
       this.strokeWidth,
       this.color,
       this.filterEraser,
-      this.removeLastContent})
+      this.removeLastContent,
+      this.onSelectContent})
       : super(key: key);
 
   @override
@@ -52,6 +55,8 @@ class PointerListenerState extends State<PointerListener> {
   List<XppStrokePoint> points = [];
 
   late XppStrokeTool tool;
+
+  Offset? _shapeStart;
 
   Map<int, DateTime> pointerTimestamps = Map();
 
@@ -91,13 +96,19 @@ class PointerListenerState extends State<PointerListener> {
                 radius: widget.strokeWidth);
 
           if (isWhiteout(data)) {
-            final double width = (data.pressure == 0
-                ? (widget.strokeWidth ?? 5)
-                : data.pressure * widget.strokeWidth!) * 6;
-            points.add(XppStrokePoint(
-                x: data.localPosition.dx,
-                y: data.localPosition.dy,
-                width: width));
+            // Real whiteout: erase underlying strokes instead of drawing white ink.
+            widget.filterEraser!(
+                coordinates:
+                    Offset(data.localPosition.dx, data.localPosition.dy),
+                radius: (widget.strokeWidth ?? 5) * 3);
+          }
+
+          if (isShape(data) && _shapeStart != null) {
+            points = _buildShapePoints(
+              start: _shapeStart!,
+              end: data.localPosition,
+              tool: widget.toolData[data.kind]!,
+            );
             setState(() {});
           }
         },
@@ -132,15 +143,33 @@ class PointerListenerState extends State<PointerListener> {
                 .then((value) => widget.onNewContent!(value))
                 .catchError((_) {});
           }
+          if (isSelect(data)) {
+            widget.onSelectContent?.call(data.localPosition);
+            return;
+          }
+          if (isShape(data)) {
+            _shapeStart = data.localPosition;
+          }
         },
         onPointerUp: (data) {
+          if (isSelect(data)) {
+            setState(() {
+              points.clear();
+            });
+            return;
+          }
           if (!poppedContentForCurrentPointer) saveStroke(tool);
           poppedContentForCurrentPointer = false;
-          points.clear();
+          setState(() {
+            points.clear();
+            _shapeStart = null;
+          });
         },
         onPointerCancel: (data) {
-          points.clear();
-          poppedContentForCurrentPointer = false;
+          setState(() {
+            points.clear();
+            poppedContentForCurrentPointer = false;
+          });
         },
         onPointerSignal: (data) {
           setState(() {
@@ -222,6 +251,67 @@ class PointerListenerState extends State<PointerListener> {
   bool isWhiteout(PointerEvent data) {
     return (widget.toolData.keys.contains(data.kind) &&
         widget.toolData[data.kind] == EditingTool.WHITEOUT);
+  }
+
+  bool isSelect(PointerEvent data) {
+    return (widget.toolData.keys.contains(data.kind) &&
+        widget.toolData[data.kind] == EditingTool.SELECT);
+  }
+
+  bool isLine(PointerEvent data) {
+    return (widget.toolData.keys.contains(data.kind) &&
+        widget.toolData[data.kind] == EditingTool.LINE);
+  }
+
+  bool isRectangle(PointerEvent data) {
+    return (widget.toolData.keys.contains(data.kind) &&
+        widget.toolData[data.kind] == EditingTool.RECTANGLE);
+  }
+
+  bool isEllipse(PointerEvent data) {
+    return (widget.toolData.keys.contains(data.kind) &&
+        widget.toolData[data.kind] == EditingTool.ELLIPSE);
+  }
+
+  bool isShape(PointerEvent data) {
+    return isLine(data) || isRectangle(data) || isEllipse(data);
+  }
+
+  List<XppStrokePoint> _buildShapePoints(
+      {required Offset start, required Offset end, required EditingTool tool}) {
+    final width = widget.strokeWidth ?? 2.5;
+    switch (tool) {
+      case EditingTool.LINE:
+        return [
+          XppStrokePoint(x: start.dx, y: start.dy, width: width),
+          XppStrokePoint(x: end.dx, y: end.dy, width: width),
+        ];
+      case EditingTool.RECTANGLE:
+        return [
+          XppStrokePoint(x: start.dx, y: start.dy, width: width),
+          XppStrokePoint(x: end.dx, y: start.dy, width: width),
+          XppStrokePoint(x: end.dx, y: end.dy, width: width),
+          XppStrokePoint(x: start.dx, y: end.dy, width: width),
+          XppStrokePoint(x: start.dx, y: start.dy, width: width),
+        ];
+      case EditingTool.ELLIPSE:
+        final points = <XppStrokePoint>[];
+        final center = Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2);
+        final rx = (end.dx - start.dx).abs() / 2;
+        final ry = (end.dy - start.dy).abs() / 2;
+        const steps = 36;
+        for (int i = 0; i <= steps; i++) {
+          final theta = 2 * math.pi * i / steps;
+          points.add(XppStrokePoint(
+            x: center.dx + rx * math.cos(theta),
+            y: center.dy + ry * math.sin(theta),
+            width: width,
+          ));
+        }
+        return points;
+      default:
+        return [];
+    }
   }
 
   XppStrokeTool getToolFromPointer(PointerEvent data) {

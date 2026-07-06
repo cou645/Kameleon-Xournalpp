@@ -4,6 +4,9 @@ import 'dart:io' as io;
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
+import 'package:flutter/scheduler.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 import 'package:file_picker_cross/file_picker_cross.dart';
 import 'package:flutter/foundation.dart';
@@ -20,10 +23,13 @@ import 'package:xournalpp/src/XppLayer.dart';
 import 'package:xournalpp/src/XppPage.dart';
 import 'package:xournalpp/src/globals.dart';
 import 'package:xournalpp/widgets/EditingToolbar.dart';
+import 'package:xournalpp/widgets/LayerManagerSheet.dart';
 import 'package:xournalpp/widgets/MainDrawer.dart';
 import 'package:xournalpp/widgets/PointerListener.dart';
 import 'package:xournalpp/widgets/ToolBoxBottomSheet.dart';
 import 'package:xournalpp/widgets/XppPageStack.dart';
+import 'package:xournalpp/widgets/SelectionOverlay.dart' as selection;
+import 'package:xournalpp/widgets/TextEditOverlay.dart';
 import 'package:xournalpp/widgets/XppPagesListView.dart';
 import 'package:xournalpp/widgets/ZoomableWidget.dart';
 
@@ -42,6 +48,7 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
   XppFile? _file;
 
   int currentPage = 0;
+  int _currentLayer = 0;
 
   Color toolColor = Colors.blueGrey;
   double toolWidth = 5;
@@ -62,6 +69,15 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
 
   bool savingFile = false;
 
+  /// Currently selected content for move/resize/rotate.
+  XppContent? _selectedContent;
+
+  /// In-app clipboard for copy/cut/paste of content objects.
+  XppContent? _clipboardContent;
+
+  /// Currently inline-edited text object.
+  XppText? _editingText;
+
   // Undo/Redo history — each entry is a snapshot of the current page's content list
   final List<List<XppContent?>> _undoStack = [];
   final List<List<XppContent?>> _redoStack = [];
@@ -72,6 +88,7 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
   @override
   void initState() {
     _setMetadata();
+    _toolData[PointerDeviceKind.touch] = EditingTool.STYLUS;
     super.initState();
     _controllerReset = AnimationController(
       vsync: this,
@@ -102,13 +119,16 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
                   child: AspectRatio(
                     aspectRatio: _file!.pages![currentPage].pageSize!.ratio,
                     child: FittedBox(
-                      child: PointerListener(
-                        key: _pointerListenerKey,
-                        translationMatrix: _zoomController.value,
-                        toolData: _toolData,
-                        strokeWidth: toolWidth,
-                        color: toolColor,
-                        onDeviceChange: (
+                      child: Stack(
+                        children: [
+                          PointerListener(
+                            key: _pointerListenerKey,
+                            translationMatrix: _zoomController.value,
+                            toolData: _toolData,
+                            strokeWidth: toolWidth,
+                            color: toolColor,
+                            onSelectContent: _onSelectContent,
+                            onDeviceChange: (
                             {int? device, PointerDeviceKind? kind}) {
                           //_currentDevice = device;
                           setDefaultDeviceIfNotSet(kind: kind);
@@ -121,12 +141,12 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
                         },
                         removeLastContent: () {
                           _pushUndo();
-                          _file!.pages![currentPage].layers![0].content!
+                          _file!.pages![currentPage].layers![_currentLayer].content!
                               .removeLast();
                         },
                         filterEraser: ({Offset? coordinates, double? radius}) {
                           List<Function> removalFunctions = [];
-                          _file!.pages![currentPage].layers![0].content!
+                          _file!.pages![currentPage].layers![_currentLayer].content!
                               .forEach((stroke) {
                             final delta = stroke!.eraseWhere(
                                 coordinates: coordinates, radius: radius);
@@ -134,11 +154,11 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
 
                             removalFunctions.add(() {
                               final int index = _file!
-                                  .pages![currentPage].layers![0].content!
+                                  .pages![currentPage].layers![_currentLayer].content!
                                   .indexOf(stroke);
-                              _file!.pages![currentPage].layers![0].content!
+                              _file!.pages![currentPage].layers![_currentLayer].content!
                                   .removeAt(index);
-                              _file!.pages![currentPage].layers![0].content!
+                              _file!.pages![currentPage].layers![_currentLayer].content!
                                   .insertAll(index, delta.newContent);
                             });
                           });
@@ -152,13 +172,15 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
                         },
                         onNewContent: (newContent) {
                           _pushUndo();
-                          _file!.pages![currentPage].layers![0].content =
+                          _file!.pages![currentPage].layers![_currentLayer].content =
                               new List.from(_file!
-                                  .pages![currentPage].layers![0].content!)
+                                  .pages![currentPage].layers![_currentLayer].content!)
                                 ..add(newContent);
 
                           _pageStackKey.currentState!
                               .setPageData(_file!.pages![currentPage]);
+                          _pointerListenerKey.currentState?.clearPoints();
+                          setState(() {});
                         },
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(4),
@@ -168,6 +190,17 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
                             onEditContent: _handleEditContent,
                           ),
                         ),
+                      ),
+                      if (_selectedContent != null)
+                        selection.ObjectSelectionOverlay(
+                          content: _selectedContent!,
+                          onChanged: () => setState(() {}),
+                          onCommit: _pushUndo,
+                          onCopy: _copySelection,
+                          onCut: _cutSelection,
+                          onDelete: _deleteSelection,
+                        ),
+                        ],
                       ),
                     ),
                   ),
@@ -260,12 +293,18 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
             onSelected: (item) async {
               if (item == S.of(context).saveAs) saveFile(export: true);
               if (item == S.of(context).sharePage) shareScreenshot();
+              if (item == S.of(context).exportPdf) exportPdf();
+              if (item == 'Paste') _pasteClipboard();
+              if (item == S.of(context).manageLayers) _showLayerManager();
               if (item == 'Send to KP…') sendToKP();
             },
             itemBuilder: (BuildContext context) {
               return {
                 S.of(context).saveAs,
                 if (!kIsWeb) S.of(context).sharePage,
+                S.of(context).exportPdf,
+                if (_clipboardContent != null) 'Paste',
+                S.of(context).manageLayers,
                 'Send to KP…',
               }.map((String choice) {
                 return PopupMenuItem<String>(
@@ -453,12 +492,14 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
   }
 
   void _setZoomableState() {
-    final zoomEnabled = _toolData[_currentDevice] == null ||
-        _toolData[_currentDevice] == EditingTool.MOVE;
+    final tool = _toolData[_currentDevice];
+    final zoomEnabled = tool == null || tool == EditingTool.MOVE;
+    final selectEnabled = tool == EditingTool.SELECT;
     _zoomableKey.currentState!
         .setState(() => _zoomableKey.currentState!.enabled = zoomEnabled);
     _pointerListenerKey.currentState!.setState(() {
-      _pointerListenerKey.currentState!.drawingEnabled = !zoomEnabled;
+      _pointerListenerKey.currentState!.drawingEnabled =
+          !zoomEnabled && !selectEnabled;
     });
   }
 
@@ -492,6 +533,69 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
         .exportToStorage() as FutureOr<String>);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(S.of(context).successfullyShared + ' ' + fileName)));
+  }
+
+  Future<Uint8List> _renderPageToPng(XppPage page) async {
+    final key = GlobalKey<XppPageStackState>();
+    final entry = OverlayEntry(builder: (context) {
+      return Positioned(
+        left: -10000,
+        top: -10000,
+        child: IgnorePointer(
+          child: SizedBox(
+            width: page.pageSize!.width,
+            height: page.pageSize!.height,
+            child: XppPageStack(key: key, page: page),
+          ),
+        ),
+      );
+    });
+    Overlay.of(context).insert(entry);
+    await SchedulerBinding.instance.endOfFrame;
+    try {
+      return await key.currentState!.toPng();
+    } finally {
+      entry.remove();
+    }
+  }
+
+  void exportPdf() async {
+    final snack = ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(S.of(context).renderingPdf),
+        duration: Duration(days: 999),
+      ),
+    );
+    try {
+      final pdf = pw.Document();
+      for (int i = 0; i < _file!.pages!.length; i++) {
+        final page = _file!.pages![i];
+        final png = await _renderPageToPng(page);
+        final image = pw.MemoryImage(png);
+        pdf.addPage(
+          pw.Page(
+            pageFormat: PdfPageFormat(page.pageSize!.width!, page.pageSize!.height!),
+            build: (context) => pw.Image(image),
+          ),
+        );
+      }
+      final bytes = await pdf.save();
+      snack.close();
+      final fileName = '${_file?.title ?? S.of(context).newFile}.pdf';
+      final path = await (FilePickerCross(bytes,
+              type: FileTypeCross.custom,
+              fileExtension: 'pdf',
+              path: '/export/' + fileName)
+          .exportToStorage() as FutureOr<String>);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.of(context).pdfExportedTo(path))),
+      );
+    } catch (e) {
+      snack.close();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.of(context).pdfExportFailed(e.toString()))),
+      );
+    }
   }
 
   void saveFile({bool export = false}) async {
@@ -555,44 +659,60 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
 
   // ── Edit existing content ───────────────────────────────────────────────────
 
-  void _insertImage() {
+  void _insertImage() async {
     final pageSize = _file!.pages![currentPage].pageSize!;
     final topLeft = Offset(pageSize.width! / 4, pageSize.height! / 4);
-    XppImage.open(topLeft: topLeft).then((img) {
+    try {
+      final img = await XppImage.open(topLeft: topLeft);
       _pushUndo();
-      _file!.pages![currentPage].layers![0].content =
-          List.from(_file!.pages![currentPage].layers![0].content!)..add(img);
+      _file!.pages![currentPage].layers![_currentLayer].content =
+          List.from(_file!.pages![currentPage].layers![_currentLayer].content!)..add(img);
       _pageStackKey.currentState?.setPageData(_file!.pages![currentPage]);
       setState(() {});
-    }).catchError((_) {});
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not insert image: $e')),
+        );
+      }
+    }
   }
 
   void _handleEditContent(XppContent content) {
     if (content is XppText) {
-      XppText.edit(
-        context: context,
-        topLeft: content.offset ?? Offset.zero,
-        color: content.color ?? toolColor,
-        size: content.size ?? toolWidth * 3,
-        initialText: content.text,
-      ).then((replacement) {
-        if (replacement == null) return;
-        _pushUndo();
-        final layer = _file!.pages![currentPage].layers![0];
-        final idx = layer.content!.indexOf(content);
-        if (idx >= 0) {
-          layer.content![idx] = replacement;
-          _pageStackKey.currentState?.setPageData(_file!.pages![currentPage]);
-          setState(() {});
-        }
-      });
+      _startInlineEdit(content);
     }
+  }
+
+  void _startInlineEdit(XppText content) {
+    setState(() {
+      _editingText = content;
+      _selectedContent = null;
+    });
+  }
+
+  void _finishInlineEdit(String newText) {
+    if (_editingText == null) return;
+    if (newText.isEmpty) {
+      _cancelInlineEdit();
+      return;
+    }
+    _pushUndo();
+    setState(() {
+      _editingText!.text = newText;
+      _editingText = null;
+    });
+    _pageStackKey.currentState?.setPageData(_file!.pages![currentPage]);
+  }
+
+  void _cancelInlineEdit() {
+    setState(() => _editingText = null);
   }
 
   // ── Undo / Redo ─────────────────────────────────────────────────────────────
 
   List<XppContent?> get _currentContent =>
-      _file!.pages![currentPage].layers![0].content!;
+      _file!.pages![currentPage].layers![_currentLayer].content!;
 
   void _pushUndo() {
     _undoStack.add(List.from(_currentContent));
@@ -601,7 +721,7 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
 
   void _applyContent(List<XppContent?> content) {
     setState(() {
-      _file!.pages![currentPage].layers![0].content = List.from(content);
+      _file!.pages![currentPage].layers![_currentLayer].content = List.from(content);
     });
     _pageStackKey.currentState?.setPageData(_file!.pages![currentPage]);
   }
@@ -715,6 +835,134 @@ class _CanvasPageState extends State<CanvasPage> with TickerProviderStateMixin {
     ).animate(_controllerReset);
     _animationReset!.addListener(_onAnimationReset);
     _controllerReset.forward();
+  }
+
+  void _onSelectContent(Offset coordinates) {
+    final content = _file!.pages![currentPage].layers![_currentLayer].content;
+    XppContent? hit;
+    // Search from top (last) to bottom so the visually topmost object wins.
+    for (int i = content!.length - 1; i >= 0; i--) {
+      final item = content[i];
+      if (item != null &&
+          item.shouldSelectAt(coordinates: coordinates, tool: EditingTool.SELECT)) {
+        hit = item;
+        break;
+      }
+    }
+    setState(() => _selectedContent = hit);
+  }
+
+  void _copySelection() {
+    if (_selectedContent == null) return;
+    setState(() {
+      _clipboardContent = _selectedContent!.clone();
+    });
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(S.of(context).copied)));
+  }
+
+  void _cutSelection() {
+    if (_selectedContent == null) return;
+    _pushUndo();
+    setState(() {
+      _clipboardContent = _selectedContent!.clone();
+      _currentContent.remove(_selectedContent);
+      _selectedContent = null;
+    });
+    _pageStackKey.currentState?.setPageData(_file!.pages![currentPage]);
+  }
+
+  void _deleteSelection() {
+    if (_selectedContent == null) return;
+    _pushUndo();
+    setState(() {
+      _currentContent.remove(_selectedContent);
+      _selectedContent = null;
+    });
+    _pageStackKey.currentState?.setPageData(_file!.pages![currentPage]);
+  }
+
+  void _pasteClipboard() {
+    if (_clipboardContent == null) return;
+    _pushUndo();
+    final pasted = _clipboardContent!.clone();
+    pasted.translate(const Offset(20, 20));
+    setState(() {
+      _currentContent.add(pasted);
+      _selectedContent = pasted;
+    });
+    _pageStackKey.currentState?.setPageData(_file!.pages![currentPage]);
+  }
+
+  void _showLayerManager() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+      ),
+      builder: (context) => LayerManagerSheet(
+        page: _file!.pages![currentPage],
+        currentLayer: _currentLayer,
+        onLayerSelected: (index) {
+          setState(() {
+            _currentLayer = index;
+            _selectedContent = null;
+          });
+          _pageStackKey.currentState
+              ?.setPageData(_file!.pages![currentPage]);
+        },
+        onAddLayer: () {
+          _pushUndo();
+          setState(() {
+            _file!.pages![currentPage].layers!.add(XppLayer.empty());
+            _currentLayer = _file!.pages![currentPage].layers!.length - 1;
+            _selectedContent = null;
+          });
+          _pageStackKey.currentState
+              ?.setPageData(_file!.pages![currentPage]);
+        },
+        onRename: (index, name) {
+          setState(() {
+            _file!.pages![currentPage].layers![index].name =
+                name.isEmpty ? null : name;
+          });
+          _pageStackKey.currentState
+              ?.setPageData(_file!.pages![currentPage]);
+        },
+        onDelete: (index) {
+          _pushUndo();
+          setState(() {
+            _file!.pages![currentPage].layers!.removeAt(index);
+            if (_currentLayer >= _file!.pages![currentPage].layers!.length) {
+              _currentLayer = _file!.pages![currentPage].layers!.length - 1;
+            }
+            _selectedContent = null;
+          });
+          _pageStackKey.currentState
+              ?.setPageData(_file!.pages![currentPage]);
+        },
+        onMove: (index, delta) {
+          _pushUndo();
+          setState(() {
+            final layers = _file!.pages![currentPage].layers!;
+            final newIndex = index + delta;
+            final layer = layers.removeAt(index);
+            layers.insert(newIndex, layer);
+            if (_currentLayer == index) {
+              _currentLayer = newIndex;
+            } else if (delta > 0 && _currentLayer > index && _currentLayer <= newIndex) {
+              _currentLayer--;
+            } else if (delta < 0 && _currentLayer < index && _currentLayer >= newIndex) {
+              _currentLayer++;
+            }
+          });
+          _pageStackKey.currentState
+              ?.setPageData(_file!.pages![currentPage]);
+        },
+      ),
+    );
   }
 
   void _onInteractionStart(ScaleStartDetails details) {

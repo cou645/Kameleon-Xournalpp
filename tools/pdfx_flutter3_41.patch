@@ -1,0 +1,20 @@
+--- android/src/main/kotlin/io/scer/pdfx/Messages.kt	2026-07-05 13:00:57.816415852 +0100
++++ /tmp/pdfx_target/android/src/main/kotlin/io/scer/pdfx/Messages.kt	2026-07-05 13:00:57.859415849 +0100
+@@ -254,7 +254,7 @@
+         surfaceProducers.put(id, surfaceProducer)
+ 
+         surfaceProducer.setCallback(object : Callback {
+-            override fun onSurfaceAvailable() {
++            override fun onSurfaceCreated() {
+                 documentStatesPerSurface[id]?.let { documentUpdate ->
+                     onDocumentOrSurfaceChanged(
+                         surfaceProducer.surface,
+@@ -264,7 +264,7 @@
+                 }
+             }
+ 
+-            override fun onSurfaceCleanup() {
++            override fun onSurfaceDestroyed() {
+                 // ignore - Surface is used once to draw bitmap
+             }
+         })

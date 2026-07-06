@@ -20,129 +20,178 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'pt';
 
+  static String m0(error) =>
+      "Não foi possível definir o fundo de imagem: ${error}";
+
+  static String m1(error) => "Não foi possível definir o fundo PDF: ${error}";
+
+  static String m2(error) => "Falha ao exportar PDF: ${error}";
+
+  static String m3(path) => "PDF exportado para ${path}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
-        "abort": MessageLookupByLibrary.simpleMessage("Abortar"),
-        "about": MessageLookupByLibrary.simpleMessage("Sobre"),
-        "aboutXournal":
-            MessageLookupByLibrary.simpleMessage("Sobre o Xournal++"),
-        "aboutXournalMobileEdition":
-            MessageLookupByLibrary.simpleMessage("Sobre o Xournal++ Mobile"),
-        "addPage": MessageLookupByLibrary.simpleMessage("Adicionar página"),
-        "apply": MessageLookupByLibrary.simpleMessage("Aplicar"),
-        "areYouSureIHaveThePermissionAndAreYou":
-            MessageLookupByLibrary.simpleMessage(
-                ". Tem certeza de que tenho a permissão necessária? E tem certeza de que é um arquivo Xournal++?"),
-        "areYouSureToDeleteTheSelectedFileThisCannot":
-            MessageLookupByLibrary.simpleMessage(
-                "Tem certeza de que deseja deletar o arquivo selecionado? É irreversvel."),
-        "background": MessageLookupByLibrary.simpleMessage("Background"),
-        "between1And": MessageLookupByLibrary.simpleMessage("Entre 1 e"),
-        "cancel": MessageLookupByLibrary.simpleMessage("Cancelar"),
-        "close": MessageLookupByLibrary.simpleMessage("Fechar"),
-        "color": MessageLookupByLibrary.simpleMessage("Cor"),
-        "confirmDelete":
-            MessageLookupByLibrary.simpleMessage("Confirmar deleção"),
-        "copyErrorMessage":
-            MessageLookupByLibrary.simpleMessage("Copiar mensagem de erro"),
-        "delete": MessageLookupByLibrary.simpleMessage("Deletar"),
-        "deletePage": MessageLookupByLibrary.simpleMessage("Deletar página"),
-        "dotted": MessageLookupByLibrary.simpleMessage("Pontilhado"),
-        "doubleTapToChange":
-            MessageLookupByLibrary.simpleMessage("Clique duplo para mudar."),
-        "dropFilesToOpen":
-            MessageLookupByLibrary.simpleMessage("Arraste arquivos para abrir"),
-        "eraser": MessageLookupByLibrary.simpleMessage("Apagador"),
-        "error": MessageLookupByLibrary.simpleMessage("Erro"),
-        "errorLoadingFile":
-            MessageLookupByLibrary.simpleMessage("Erro carregando arquivo"),
-        "errorOpeningFile":
-            MessageLookupByLibrary.simpleMessage("Erro abrindo arquivo"),
-        "graph": MessageLookupByLibrary.simpleMessage("Gráfico"),
-        "highlighter": MessageLookupByLibrary.simpleMessage("Marcador"),
-        "home": MessageLookupByLibrary.simpleMessage("Início"),
-        "imVerySorryButICouldntReadTheFile":
-            MessageLookupByLibrary.simpleMessage(
-                "Sinto muito, mas não pude ler o arquivo."),
-        "image": MessageLookupByLibrary.simpleMessage("Imagem"),
-        "importPdf": MessageLookupByLibrary.simpleMessage("Importar PDF"),
-        "latexNotImplemented":
-            MessageLookupByLibrary.simpleMessage("LaTeX (não implementado)"),
-        "lined": MessageLookupByLibrary.simpleMessage("Com linhas"),
-        "loadingFile":
-            MessageLookupByLibrary.simpleMessage("Carregando arquivo..."),
-        "mb": MessageLookupByLibrary.simpleMessage("MB"),
-        "mobileEditionUnofficial":
-            MessageLookupByLibrary.simpleMessage("Aplicativo móvel oficial"),
-        "move": MessageLookupByLibrary.simpleMessage("Mover"),
-        "movePage": MessageLookupByLibrary.simpleMessage("Mover página"),
-        "newDocument": MessageLookupByLibrary.simpleMessage("Novo Documento"),
-        "newFile": MessageLookupByLibrary.simpleMessage("Novo"),
-        "newNotebook": MessageLookupByLibrary.simpleMessage("Novo caderno"),
-        "newPageIndex":
-            MessageLookupByLibrary.simpleMessage("Nova página índice"),
-        "newTitle": MessageLookupByLibrary.simpleMessage("Novo título"),
-        "noFileSelected":
-            MessageLookupByLibrary.simpleMessage("Nenhum arquivo selecionado"),
-        "noRecentFiles":
-            MessageLookupByLibrary.simpleMessage("Nenhum arquivo recente."),
-        "notImplemented":
-            MessageLookupByLibrary.simpleMessage(" (Não implementado)"),
-        "notWorkingYet":
-            MessageLookupByLibrary.simpleMessage("Não está funcionando ainda."),
-        "okay": MessageLookupByLibrary.simpleMessage("Okay"),
-        "open": MessageLookupByLibrary.simpleMessage("Abrir"),
-        "opening": MessageLookupByLibrary.simpleMessage("Abrindo"),
-        "openingFile": MessageLookupByLibrary.simpleMessage("Abrindo arquivo"),
-        "pageBackground":
-            MessageLookupByLibrary.simpleMessage("Background da página"),
-        "pdf": MessageLookupByLibrary.simpleMessage("PDF"),
-        "pen": MessageLookupByLibrary.simpleMessage("Caneta"),
-        "quota": MessageLookupByLibrary.simpleMessage("Cota"),
-        "recentFiles":
-            MessageLookupByLibrary.simpleMessage("Arquivos recentes"),
-        "ruled": MessageLookupByLibrary.simpleMessage("Com linhas e margem"),
-        "save": MessageLookupByLibrary.simpleMessage("Salvar"),
-        "saveAs": MessageLookupByLibrary.simpleMessage("Salvar como..."),
-        "savingFile":
-            MessageLookupByLibrary.simpleMessage("Salvando arquivo..."),
-        "selectColor": MessageLookupByLibrary.simpleMessage("Selecionar cor"),
-        "selectNotImplemented": MessageLookupByLibrary.simpleMessage(
-            "Selecionar (não implementado)"),
-        "setDocumentTitle": MessageLookupByLibrary.simpleMessage(
-            "Definir título do documento."),
-        "sharePage":
-            MessageLookupByLibrary.simpleMessage("Compartilhar página..."),
-        "sourceCode": MessageLookupByLibrary.simpleMessage("Código Fonte"),
-        "strokeWidth":
-            MessageLookupByLibrary.simpleMessage("Grossura da linha:"),
-        "successfullySaved":
-            MessageLookupByLibrary.simpleMessage("Salvo com sucesso"),
-        "successfullyShared":
-            MessageLookupByLibrary.simpleMessage("Compartilhado com sucesso"),
-        "textNotImplemented":
-            MessageLookupByLibrary.simpleMessage("Texto (não implementado)"),
-        "theFollowingErrorWasDetected": MessageLookupByLibrary.simpleMessage(
-            "O seguinte erro foi detectado:"),
-        "thereWereNoMorePagesWeAddedOne": MessageLookupByLibrary.simpleMessage(
-            "Não haviam mais páginas. Adicionamos uma."),
-        "tool": MessageLookupByLibrary.simpleMessage("Ferramenta"),
-        "toolboxNotImplementedYet": MessageLookupByLibrary.simpleMessage(
-            "Caixa de ferramentas ainda não implementada."),
-        "tools": MessageLookupByLibrary.simpleMessage("Ferramentas"),
-        "unfortunatelyThereWasAnErrorSavingThisFile":
-            MessageLookupByLibrary.simpleMessage(
-                "Infelizmente houve um erro ao salvar este arquivo."),
-        "used": MessageLookupByLibrary.simpleMessage("utilizado"),
-        "whiteoutEraserNotImplemented": MessageLookupByLibrary.simpleMessage(
-            "Corretivo (não implementado)"),
-        "xournalMobileEditionIsAnUnofficialProjectTryingToMake":
-            MessageLookupByLibrary.simpleMessage(
-                "Xournal++ Mobile é um projeto que visa tornar as funcionalidades de Xournal++ e seus arquivos disponíveis em diferentes aparelhos."),
-        "youDidNotSelectAnyFile": MessageLookupByLibrary.simpleMessage(
-            "Você não selecionou nenhum arquivo."),
-        "youveBeenRedirectedToTheLocalApp":
-            MessageLookupByLibrary.simpleMessage(
-                "Você foi redirecionado ao aplicativo local.")
-      };
+    "abort": MessageLookupByLibrary.simpleMessage("Abortar"),
+    "about": MessageLookupByLibrary.simpleMessage("Sobre"),
+    "aboutXournal": MessageLookupByLibrary.simpleMessage("Sobre o Xournal++"),
+    "aboutXournalMobileEdition": MessageLookupByLibrary.simpleMessage(
+      "Sobre o Xournal++ Mobile",
+    ),
+    "addLayer": MessageLookupByLibrary.simpleMessage("Adicionar camada"),
+    "addPage": MessageLookupByLibrary.simpleMessage("Adicionar página"),
+    "apply": MessageLookupByLibrary.simpleMessage("Aplicar"),
+    "areYouSureIHaveThePermissionAndAreYou": MessageLookupByLibrary.simpleMessage(
+      ". Tem certeza de que tenho a permissão necessária? E tem certeza de que é um arquivo Xournal++?",
+    ),
+    "areYouSureToDeleteTheSelectedFileThisCannot":
+        MessageLookupByLibrary.simpleMessage(
+          "Tem certeza de que deseja deletar o arquivo selecionado? É irreversvel.",
+        ),
+    "background": MessageLookupByLibrary.simpleMessage("Background"),
+    "between1And": MessageLookupByLibrary.simpleMessage("Entre 1 e"),
+    "cancel": MessageLookupByLibrary.simpleMessage("Cancelar"),
+    "close": MessageLookupByLibrary.simpleMessage("Fechar"),
+    "color": MessageLookupByLibrary.simpleMessage("Cor"),
+    "colorAndThickness": MessageLookupByLibrary.simpleMessage(
+      "Cor e espessura",
+    ),
+    "confirmDelete": MessageLookupByLibrary.simpleMessage("Confirmar deleção"),
+    "copied": MessageLookupByLibrary.simpleMessage("Copiado"),
+    "copyErrorMessage": MessageLookupByLibrary.simpleMessage(
+      "Copiar mensagem de erro",
+    ),
+    "couldNotSetImageBackground": m0,
+    "couldNotSetPdfBackground": m1,
+    "delete": MessageLookupByLibrary.simpleMessage("Deletar"),
+    "deletePage": MessageLookupByLibrary.simpleMessage("Deletar página"),
+    "dotted": MessageLookupByLibrary.simpleMessage("Pontilhado"),
+    "doubleTapToChange": MessageLookupByLibrary.simpleMessage(
+      "Clique duplo para mudar.",
+    ),
+    "dropFilesToOpen": MessageLookupByLibrary.simpleMessage(
+      "Arraste arquivos para abrir",
+    ),
+    "eraser": MessageLookupByLibrary.simpleMessage("Apagador"),
+    "error": MessageLookupByLibrary.simpleMessage("Erro"),
+    "errorLoadingFile": MessageLookupByLibrary.simpleMessage(
+      "Erro carregando arquivo",
+    ),
+    "errorOpeningFile": MessageLookupByLibrary.simpleMessage(
+      "Erro abrindo arquivo",
+    ),
+    "exportPdf": MessageLookupByLibrary.simpleMessage("Exportar PDF"),
+    "graph": MessageLookupByLibrary.simpleMessage("Gráfico"),
+    "highlighter": MessageLookupByLibrary.simpleMessage("Marcador"),
+    "home": MessageLookupByLibrary.simpleMessage("Início"),
+    "imVerySorryButICouldntReadTheFile": MessageLookupByLibrary.simpleMessage(
+      "Sinto muito, mas não pude ler o arquivo.",
+    ),
+    "image": MessageLookupByLibrary.simpleMessage("Imagem"),
+    "importPdf": MessageLookupByLibrary.simpleMessage("Importar PDF"),
+    "latexNotImplemented": MessageLookupByLibrary.simpleMessage(
+      "LaTeX (não implementado)",
+    ),
+    "layerName": MessageLookupByLibrary.simpleMessage("Nome da camada"),
+    "layers": MessageLookupByLibrary.simpleMessage("Camadas"),
+    "lined": MessageLookupByLibrary.simpleMessage("Com linhas"),
+    "loadingFile": MessageLookupByLibrary.simpleMessage(
+      "Carregando arquivo...",
+    ),
+    "manageLayers": MessageLookupByLibrary.simpleMessage("Gerenciar camadas"),
+    "mb": MessageLookupByLibrary.simpleMessage("MB"),
+    "mobileEditionUnofficial": MessageLookupByLibrary.simpleMessage(
+      "Aplicativo móvel oficial",
+    ),
+    "move": MessageLookupByLibrary.simpleMessage("Mover"),
+    "movePage": MessageLookupByLibrary.simpleMessage("Mover página"),
+    "newDocument": MessageLookupByLibrary.simpleMessage("Novo Documento"),
+    "newFile": MessageLookupByLibrary.simpleMessage("Novo"),
+    "newNotebook": MessageLookupByLibrary.simpleMessage("Novo caderno"),
+    "newPageIndex": MessageLookupByLibrary.simpleMessage("Nova página índice"),
+    "newTitle": MessageLookupByLibrary.simpleMessage("Novo título"),
+    "noFileSelected": MessageLookupByLibrary.simpleMessage(
+      "Nenhum arquivo selecionado",
+    ),
+    "noRecentFiles": MessageLookupByLibrary.simpleMessage(
+      "Nenhum arquivo recente.",
+    ),
+    "notImplemented": MessageLookupByLibrary.simpleMessage(
+      " (Não implementado)",
+    ),
+    "notWorkingYet": MessageLookupByLibrary.simpleMessage(
+      "Não está funcionando ainda.",
+    ),
+    "okay": MessageLookupByLibrary.simpleMessage("Okay"),
+    "open": MessageLookupByLibrary.simpleMessage("Abrir"),
+    "openNavigation": MessageLookupByLibrary.simpleMessage("Abrir navegação"),
+    "opening": MessageLookupByLibrary.simpleMessage("Abrindo"),
+    "openingFile": MessageLookupByLibrary.simpleMessage("Abrindo arquivo"),
+    "pageBackground": MessageLookupByLibrary.simpleMessage(
+      "Background da página",
+    ),
+    "pageNumber": MessageLookupByLibrary.simpleMessage("Número da página"),
+    "pdf": MessageLookupByLibrary.simpleMessage("PDF"),
+    "pdfExportFailed": m2,
+    "pdfExportedTo": m3,
+    "pdfPage": MessageLookupByLibrary.simpleMessage("Página do PDF"),
+    "pen": MessageLookupByLibrary.simpleMessage("Caneta"),
+    "quota": MessageLookupByLibrary.simpleMessage("Cota"),
+    "recentFiles": MessageLookupByLibrary.simpleMessage("Arquivos recentes"),
+    "renameLayer": MessageLookupByLibrary.simpleMessage("Renomear camada"),
+    "renderingPdf": MessageLookupByLibrary.simpleMessage("Renderizando PDF…"),
+    "ruled": MessageLookupByLibrary.simpleMessage("Com linhas e margem"),
+    "save": MessageLookupByLibrary.simpleMessage("Salvar"),
+    "saveAs": MessageLookupByLibrary.simpleMessage("Salvar como..."),
+    "savingFile": MessageLookupByLibrary.simpleMessage("Salvando arquivo..."),
+    "select": MessageLookupByLibrary.simpleMessage("Selecionar"),
+    "selectColor": MessageLookupByLibrary.simpleMessage("Selecionar cor"),
+    "selectNotImplemented": MessageLookupByLibrary.simpleMessage(
+      "Selecionar (não implementado)",
+    ),
+    "setDocumentTitle": MessageLookupByLibrary.simpleMessage(
+      "Definir título do documento.",
+    ),
+    "sharePage": MessageLookupByLibrary.simpleMessage("Compartilhar página..."),
+    "sourceCode": MessageLookupByLibrary.simpleMessage("Código Fonte"),
+    "strokeWidth": MessageLookupByLibrary.simpleMessage("Grossura da linha:"),
+    "successfullySaved": MessageLookupByLibrary.simpleMessage(
+      "Salvo com sucesso",
+    ),
+    "successfullyShared": MessageLookupByLibrary.simpleMessage(
+      "Compartilhado com sucesso",
+    ),
+    "textNotImplemented": MessageLookupByLibrary.simpleMessage(
+      "Texto (não implementado)",
+    ),
+    "theFollowingErrorWasDetected": MessageLookupByLibrary.simpleMessage(
+      "O seguinte erro foi detectado:",
+    ),
+    "thereWereNoMorePagesWeAddedOne": MessageLookupByLibrary.simpleMessage(
+      "Não haviam mais páginas. Adicionamos uma.",
+    ),
+    "tool": MessageLookupByLibrary.simpleMessage("Ferramenta"),
+    "toolboxNotImplementedYet": MessageLookupByLibrary.simpleMessage(
+      "Caixa de ferramentas ainda não implementada.",
+    ),
+    "tools": MessageLookupByLibrary.simpleMessage("Ferramentas"),
+    "unfortunatelyThereWasAnErrorSavingThisFile":
+        MessageLookupByLibrary.simpleMessage(
+          "Infelizmente houve um erro ao salvar este arquivo.",
+        ),
+    "used": MessageLookupByLibrary.simpleMessage("utilizado"),
+    "whiteout": MessageLookupByLibrary.simpleMessage("Corretivo"),
+    "whiteoutEraserNotImplemented": MessageLookupByLibrary.simpleMessage(
+      "Corretivo (não implementado)",
+    ),
+    "xournalMobileEditionIsAnUnofficialProjectTryingToMake":
+        MessageLookupByLibrary.simpleMessage(
+          "Xournal++ Mobile é um projeto que visa tornar as funcionalidades de Xournal++ e seus arquivos disponíveis em diferentes aparelhos.",
+        ),
+    "youDidNotSelectAnyFile": MessageLookupByLibrary.simpleMessage(
+      "Você não selecionou nenhum arquivo.",
+    ),
+    "youveBeenRedirectedToTheLocalApp": MessageLookupByLibrary.simpleMessage(
+      "Você foi redirecionado ao aplicativo local.",
+    ),
+  };
 }

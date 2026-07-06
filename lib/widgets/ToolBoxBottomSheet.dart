@@ -1,3 +1,4 @@
+import 'package:file_picker_cross/file_picker_cross.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:xournalpp/generated/l10n.dart';
@@ -172,28 +173,32 @@ class _ToolBoxBottomSheetState extends State<ToolBoxBottomSheet> {
                         ),
                         AspectRatio(
                           aspectRatio: 1,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Card(
-                                child: XppBackground.none.render(),
-                              ),
-                              Text(S.of(context).pdf +
-                                  S.of(context).notImplemented)
-                            ],
+                          child: GestureDetector(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Card(
+                                  child: Icon(Icons.picture_as_pdf, size: 48),
+                                ),
+                                Text(S.of(context).pdf)
+                              ],
+                            ),
+                            onTap: () => _pickPdfBackground(),
                           ),
                         ),
                         AspectRatio(
                           aspectRatio: 1,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Card(
-                                child: XppBackground.none.render(),
-                              ),
-                              Text(S.of(context).image +
-                                  S.of(context).notImplemented)
-                            ],
+                          child: GestureDetector(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Card(
+                                  child: Icon(Icons.image, size: 48),
+                                ),
+                                Text(S.of(context).image)
+                              ],
+                            ),
+                            onTap: () => _pickImageBackground(),
                           ),
                         ),
                       ],
@@ -213,6 +218,66 @@ class _ToolBoxBottomSheetState extends State<ToolBoxBottomSheet> {
               onColorChanged: (newColor) => Navigator.of(context).pop(newColor),
             ),
           ));
+
+  Future<void> _pickPdfBackground() async {
+    try {
+      final picked = await FilePickerCross.importFromStorage(
+          type: FileTypeCross.custom, fileExtension: 'pdf');
+      if (picked.path == null) return;
+      final pageNo = await _askPdfPage() ?? 1;
+      widget.onBackgroundChange!(XppBackgroundPdf(
+        onUnavailable: (_) async => throw 'PDF background not available',
+        filename: picked.path,
+        page: pageNo,
+      ));
+      Navigator.of(context).pop();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(S.of(context).couldNotSetPdfBackground(e.toString()))));
+    }
+  }
+
+  Future<void> _pickImageBackground() async {
+    try {
+      final picked =
+          await FilePickerCross.importFromStorage(type: FileTypeCross.image);
+      if (picked.path == null) return;
+      widget.onBackgroundChange!(
+          XppBackgroundImage(filename: picked.path));
+      Navigator.of(context).pop();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(S.of(context).couldNotSetImageBackground(e.toString()))));
+    }
+  }
+
+  Future<int?> _askPdfPage() async {
+    final controller = TextEditingController(text: '1');
+    final result = await showDialog<int>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(S.of(context).pdfPage),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(labelText: S.of(context).pageNumber),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop(int.tryParse(controller.text) ?? 1);
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+    return result;
+  }
 }
 
 enum EditingTool {
@@ -224,5 +289,8 @@ enum EditingTool {
   MOVE,
   SELECT,
   ERASER,
-  WHITEOUT
+  WHITEOUT,
+  LINE,
+  RECTANGLE,
+  ELLIPSE,
 }

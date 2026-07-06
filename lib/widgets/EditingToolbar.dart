@@ -56,7 +56,20 @@ class EditingToolBarState extends State<EditingToolBar> {
             getInkwellButton(EditingTool.ERASER, FontAwesomeIcons.eraser, enableSettings: true, usePrimaryColor: true),
             getInkwellButton(EditingTool.WHITEOUT, Icons.format_paint, usePrimaryColor: true),
             getInkwellButton(EditingTool.IMAGE, Icons.add_photo_alternate, usePrimaryColor: true, onTapExtra: widget.onImageTapped),
+            getInkwellButton(EditingTool.LINE, Icons.show_chart, usePrimaryColor: true),
+            getInkwellButton(EditingTool.RECTANGLE, Icons.check_box_outline_blank, usePrimaryColor: true),
+            getInkwellButton(EditingTool.ELLIPSE, Icons.radio_button_unchecked, usePrimaryColor: true),
             getInkwellButton(EditingTool.SELECT, Icons.tab_unselected, usePrimaryColor: true),
+            if (_hasSettings(getTool()))
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: FloatingActionButton(
+                  heroTag: 'toolSettings',
+                  onPressed: () => showCustomDialog(context),
+                  child: const Icon(Icons.tune),
+                  tooltip: S.of(context).colorAndThickness,
+                ),
+              ),
           ],
           shrinkWrap: true,
           scrollDirection: Axis.horizontal,
@@ -121,6 +134,12 @@ class EditingToolBarState extends State<EditingToolBar> {
       device = PointerDeviceKind.touch;
     }
     return widget.deviceMap![device];
+  }
+
+  bool _hasSettings(EditingTool? tool) {
+    return tool == EditingTool.STYLUS ||
+        tool == EditingTool.HIGHLIGHT ||
+        tool == EditingTool.ERASER;
   }
 }
 

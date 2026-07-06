@@ -143,7 +143,17 @@
          it's a good idea to explicitly include this declaration. -->
     <uses-feature android:name="android.hardware.touchscreen"
         android:required="false" />
-    <uses-permission android:name="android.permission.MEDIA_CONTENT_CONTROL"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <!-- Media picker permissions.
+         On Android 13+ (API 33) the broad storage permissions are replaced by
+         granular media permissions. file_picker uses ACTION_GET_CONTENT so the
+         picker itself does not require runtime permissions, but declaring the
+         correct ones avoids issues on some OEM skins and keeps Play policy happy.
+    -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
 </manifest>

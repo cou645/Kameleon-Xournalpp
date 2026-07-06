@@ -23,9 +23,11 @@ class _MainDrawerState extends State<MainDrawer> {
 
   @override
   Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
     return Hero(
       tag: MainDrawer,
       child: Drawer(
+        backgroundColor: Theme.of(context).colorScheme.surface,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           mainAxisSize: MainAxisSize.min,
@@ -48,18 +50,21 @@ class _MainDrawerState extends State<MainDrawer> {
                   ),
                 ),
                 ListTile(
-                  leading: Icon(Icons.home),
-                  title: Text(S.of(context).home),
+                  leading: Icon(Icons.home, color: onSurface),
+                  title: Text(S.of(context).home,
+                      style: TextStyle(color: onSurface)),
                   onTap: () => Navigator.of(context).pushReplacement(
                       MaterialPageRoute(builder: (context) => OpenPage())),
                 ),
                 ListTile(
-                    leading: Icon(Icons.folder),
-                    title: Text(S.of(context).open),
+                    leading: Icon(Icons.folder, color: onSurface),
+                    title: Text(S.of(context).open,
+                        style: TextStyle(color: onSurface)),
                     onTap: () => XppFile.openAndEdit(context: context)),
                 ListTile(
-                  leading: Icon(Icons.insert_drive_file),
-                  title: Text(S.of(context).newFile),
+                  leading: Icon(Icons.insert_drive_file, color: onSurface),
+                  title: Text(S.of(context).newFile,
+                      style: TextStyle(color: onSurface)),
                   onTap: () =>
                       Navigator.of(context).pushReplacement(MaterialPageRoute(
                           builder: (context) => CanvasPage(
@@ -76,8 +81,9 @@ class _MainDrawerState extends State<MainDrawer> {
                 QuotaTile(),
                 Divider(),
                 ListTile(
-                    leading: Icon(Icons.info),
-                    title: Text(S.of(context).about),
+                    leading: Icon(Icons.info, color: onSurface),
+                    title: Text(S.of(context).about,
+                        style: TextStyle(color: onSurface)),
                     onTap: () => showAboutDialog(
                           context: context,
                           applicationName:
@@ -94,10 +100,10 @@ class _MainDrawerState extends State<MainDrawer> {
                                 !(Theme.of(context).platform ==
                                     TargetPlatform.macOS))
                               ElevatedButton.icon(
-                                  onPressed: () =>
-                                      launch('https://buymeacoff.ee/braid'),
-                                  icon: Icon(Icons.emoji_food_beverage),
-                                  label: Text('Buy me a cup of tea')),
+                                  onPressed: () => launchUrl(Uri.parse(
+                                      'https://www.paypal.com/donate/?business=cou645%40gmail.com')),
+                                  icon: Icon(Icons.payment),
+                                  label: Text('Donate via PayPal: cou645@gmail.com')),
                             OutlinedButton(
                                 onPressed: () => launch(Uri.encodeFull(
                                     'https://github.com/xournalpp/xournalpp')),

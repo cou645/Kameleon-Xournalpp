@@ -85,8 +85,21 @@ class XppBackgroundPdf extends XppBackground {
 
   @override
   XmlElement toXmlElement() {
+    late String domainString;
+    switch (domain) {
+      case XppBackgroundImageDomain.ABSOLUTE:
+        domainString = 'absolute';
+        break;
+      case XppBackgroundImageDomain.ATTACH:
+        domainString = 'attach';
+        break;
+      case XppBackgroundImageDomain.CLONE:
+        domainString = 'clone';
+        break;
+    }
     XmlElement node = XmlElement(XmlName('background'), [
       XmlAttribute(XmlName('type'), 'pdf'),
+      XmlAttribute(XmlName('domain'), domainString),
       XmlAttribute(XmlName('pageno'), page.toString()),
       XmlAttribute(XmlName('filename'), filename!),
     ]);
